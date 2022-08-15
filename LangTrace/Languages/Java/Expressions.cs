@@ -43,6 +43,17 @@ namespace LangTrace.Languages.Java
 		public DataType Type { get; private set; }
 		public int Address { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+		public bool IsAssignableTo(IAtom atom)
+		{
+			if (atom is Variable)
+				return true;
+			if (atom is FloatLiteral)
+				return true;
+			if (atom is IntLiteral)
+				return true;
+			return false;
+		}
+
 		public RValue ToRvalue()
 		{
 			return (RValue)Value;
@@ -62,20 +73,15 @@ namespace LangTrace.Languages.Java
 		}
 	}
 
-	internal class Object : LValue
+	internal class Object
 	{
 		public string Name { get; set; }
-		public string StructureName { get; set; }
-		public DataType Type => DataType.Structure;
+		public string ClassName { get; set; }
 
 		public Dictionary<string, LValue> Members = new Dictionary<string, LValue>();
 
 		public static readonly Object NullRecord = new Object();
 
-		public RValue ToRvalue()
-		{
-			throw new NotImplementedException();
-		}
 	}
 
 
@@ -97,6 +103,24 @@ namespace LangTrace.Languages.Java
 		public RValue ToRvalue()
 		{
 			throw new NotImplementedException();
+		}
+
+		public bool IsAssignableTo(IAtom atom)
+		{
+			if (atom is Reference)
+			{
+				if (this.Object.ClassName == ((Reference)atom).Object.ClassName)
+					return true;
+				return false;
+			}
+
+			if(atom is Object)
+			{
+				if (this.Object.ClassName == ((Object)atom).ClassName)
+					return true;
+				return false;
+			}
+			return false;
 		}
 	}
 
@@ -180,6 +204,12 @@ namespace LangTrace.Languages.Java
 		public RValue ToRvalue()
 		{
 			throw new NotImplementedException();
+		}
+
+		public bool IsAssignableTo(IAtom atom)
+		{
+			// THINK: Should we support assignment to arrays? for me, only at declaration
+			return false;
 		}
 	}
 

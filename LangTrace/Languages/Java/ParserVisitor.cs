@@ -199,7 +199,7 @@ namespace LangTrace.Languages.Java
 				foreach (var declarator in context.declarators().declarator())
 				{
 
-					string name = declarator.declId().identifier().GetText();
+					string name = declarator.identifier().GetText();
 
 					IAtom init = null;
 					Object rec = null;
@@ -270,43 +270,60 @@ namespace LangTrace.Languages.Java
 
 		public override IAtom VisitDeclPrimitiveVar([NotNull] JavaParser.DeclPrimitiveVarContext context)
 		{
+			Step step = new Step();
+			step.GetFromParsingContext(context);
 
-			var type = context.type().primitiveTypes();
-			var _type = GetTypeFromString(type.arithType().GetText());
-
+			var typeName = context.type().GetText();
+			var _type = GetTypeFromString(typeName);
 
 			foreach (var declarator in context.declarators().declarator())
 			{
-				LValue variable = null;
-				string _name = declarator.declId().identifier().GetText();
-				IAtom _val = null;
+				LValue primitive = null;
+				string _name = declarator.identifier().GetText();
 				var initializer = declarator.initializer();
-
+				
 				if (initializer.arrayInit() != null)
 				{
-					if (declarator.declId().arrBracket() == null)
-						throw new CompileErrorException("Can't assign array to non-array type");
+					step.Event = new Event(EventType.InitArray);
+					step.Event.Arguments.Add(typeName);
+					step.Event.Arguments.Add(_name);
 
-					List<IAtom> inits = new List<IAtom>();
+					List<Variable> inits = new List<Variable>();
 					// For now, first-dimension arrays only
 					foreach (var init in initializer.arrayInit().initializer())
 					{
+						IAtom initVal = Visit(init);
+						if (initVal is Variable)
+							initVal = ((Variable)initVal).Value;
+
 						// todo: Check if same types
-						// int x = {1,2,3};
-						if (IsAssignableToType(_type, Visit(init)))
-							inits.Add(Visit(init));
+						if (initVal is FloatLiteral || initVal is IntLiteral)
+							inits.Add(new Variable($"{_name}[]", _type, initVal));
 						else
 							throw new CompileErrorException("Different types");
-						variable = new ArrayVariable(_name, inits.ToArray());
+
+						step.Event.Arguments.Add(((Literal)initVal).GetLiteral().ToString());
+						primitive = new ArrayVariable(_name, inits.ToArray());
 					}
 				}
 				else
 				{
-					_val = Visit(initializer.expression());
-					variable = new Variable(_name, _type, _val);
+					step.Event = new Event(EventType.InitVariable);
+					step.Event.Arguments.Add(typeName);
+					step.Event.Arguments.Add(_name);
+					IAtom val = Visit(initializer.expression());
+					if(val is Variable)
+						val = ((Variable)val).Value;
+
+					if (val is FloatLiteral || val is IntLiteral)
+						primitive = new Variable(_name, _type, val);
+					else
+						throw new CompileErrorException("Can't assign!");
+					step.Event.Arguments.Add(((Literal)val).GetLiteral().ToString());
 				}
 
-				VM.Environment.DefineVariable(variable);
+				VM.Environment.DefineVariable(primitive);
+				VM.Steps.Add(step);
 			}
 
 			return null;
@@ -404,7 +421,7 @@ namespace LangTrace.Languages.Java
 						{
 							Reference left = (Reference)lhs;
 							Reference right = (Reference)rhs;
-							if (left.Object.StructureName == right.Object.StructureName)
+							if (left.Object.ClassName == right.Object.ClassName)
 								left.Object = right.Object;
 							else
 								throw new CompileErrorException("Only can assign same reference types");

@@ -33,11 +33,11 @@ namespace CodeVisions.Controllers
 			{
 				JavaInterpreter interpreter = new JavaInterpreter(request.Code);
 				interpreter.Interpret();
-				if(interpreter.InterpretationStatus == InterpretationStatus.Success)
+				if(interpreter.Status == InterpretationStatus.Success)
 				{
 					return interpreter.Steps;
 				}
-				else if(interpreter.InterpretationStatus == InterpretationStatus.Failed)
+				else if(interpreter.Status == InterpretationStatus.Failed)
 				{
 					return interpreter.Errors;
 				}

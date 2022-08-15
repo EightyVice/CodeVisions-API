@@ -15,5 +15,6 @@ namespace LangTrace.Languages.Java
 		public string Name { get; }
 
 		public RValue ToRvalue();
+		public bool IsAssignableTo(IAtom atom);
 	}
 }

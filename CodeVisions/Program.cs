@@ -7,9 +7,9 @@ using LangTrace.Languages.Java;
 
 JavaInterpreter interpreter = new JavaInterpreter(File.ReadAllText("testcode.txt"));
 interpreter.Interpret();
-if (interpreter.InterpretationStatus == InterpretationStatus.Success)
+if (interpreter.Status == InterpretationStatus.Success)
 	Console.WriteLine(JsonSerializer.Serialize(interpreter.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
-else if (interpreter.InterpretationStatus == InterpretationStatus.Failed)
+else if (interpreter.Status == InterpretationStatus.Failed)
 	Console.WriteLine(interpreter.Errors);
 else
 	Console.WriteLine("OMG somoething wrong");

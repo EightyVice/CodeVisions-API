@@ -38,19 +38,11 @@ classDec
     : 'class' identifier '{' memberDecl+ '}'
     ;
 
-type
-    : primitiveTypes
-    ;
-
 funcCall
     : identifier '(' expressionList? ')'
     ;
 
-primitiveTypes
-    : signedorunsigned? arithType
-    ;
-
-arithType
+type
     : 'char'
     | 'short'
     | 'int'
@@ -74,15 +66,12 @@ declarators
 
 
 declarator
-    : declId ('=' initializer)?
+    : identifier ('=' initializer)?
     ;
 
-declId
-    : identifier arrBracket?
-    ;
     
 arrBracket
-    :  '[' integerLiteral* ']'
+    :  '[' integerLiteral? ']'
     ;
 pointer
     : '*'

@@ -19,13 +19,13 @@ namespace LangTrace.Languages.Java
 		private string sourceCode;
 		public string Errors { get; set; }
 		public List<Step> Steps { get; private set; } = new List<Step>();
-		internal Environment Environment { get; private set; }
+		internal Environment Environment { get; private set; } = new Environment();
 
 		public JavaInterpreter(string SourceCode)
 		{
 			sourceCode = SourceCode;
 		}
-		public InterpretationStatus InterpretationStatus { get; internal set; } = InterpretationStatus.NotYet;
+		public InterpretationStatus Status { get; internal set; } = InterpretationStatus.NotYet;
 
 
 		public void Interpret()
@@ -39,8 +39,8 @@ namespace LangTrace.Languages.Java
 			parser.AddErrorListener(new ErrorListener(this));
 			tree.Accept(visitor);
 			
-			if(InterpretationStatus == InterpretationStatus.NotYet)
-				InterpretationStatus = InterpretationStatus.Success; // else it will be a failure...
+			if(Status == InterpretationStatus.NotYet)
+				Status = InterpretationStatus.Success; // else it will be a failure...
 		}
 	}
 }
