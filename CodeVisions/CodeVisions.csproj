@@ -14,4 +14,10 @@
     <ProjectReference Include="..\LangTrace\LangTrace.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="testcode.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

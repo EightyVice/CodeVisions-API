@@ -1,3 +1,21 @@
+#define CODE_TEST
+
+#if CODE_TEST
+using System.Text.Json;
+using LangTrace;
+using LangTrace.Languages.Java;
+
+JavaInterpreter interpreter = new JavaInterpreter(File.ReadAllText("testcode.txt"));
+interpreter.Interpret();
+if (interpreter.InterpretationStatus == InterpretationStatus.Success)
+	Console.WriteLine(JsonSerializer.Serialize(interpreter.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
+else if (interpreter.InterpretationStatus == InterpretationStatus.Failed)
+	Console.WriteLine(interpreter.Errors);
+else
+	Console.WriteLine("OMG somoething wrong");
+return;
+#endif
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
