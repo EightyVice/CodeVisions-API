@@ -82,6 +82,7 @@ expression
     | identifier                                                                    #ExprIdentifier
     | '(' expression ')'                                                            #ExprGroupedExpression
     | expression bop='.' identifier                                                 #ExprMemberAcess
+    | expression '[' expression ']'                                                 #ExprArraySubscription
     | funcCall                                                                      #ExprFuncCall
     | 'new' identifier '(' ')'                                                      #ExprConstructor
     | expression postfix=('++' | '--')                                              #ExprPostfix    

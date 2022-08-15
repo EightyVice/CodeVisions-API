@@ -364,6 +364,28 @@ namespace LangTrace.Languages.Java
 			else
 				throw new CompileErrorException($"record {((Object)_ref).Name} doesn't have member '{member}'");
 		}
+		public override IAtom VisitExprArraySubscription([NotNull] JavaParser.ExprArraySubscriptionContext context)
+		{
+			IAtom arrExpr = Visit(context.expression(0));
+			IAtom index = Visit(context.expression(1));
+			if(arrExpr is ArrayVariable)
+			{
+				ArrayVariable array = ((ArrayVariable)arrExpr);
+				if(index is IntLiteral || index is FloatLiteral)
+				{
+					int i = Convert.ToInt32(((Literal)index).GetLiteral());
+					if (i < 0) throw new CompileErrorException("An index can't be a negative number");
+					if (i >= array.Values.Count) throw new CompileErrorException("Index beyond size exception");
+
+					return array.Values[i];
+				}
+			}
+			else
+			{
+				throw new CompileErrorException("Only can subscript arrays");
+			}
+			return null;
+		}
 		public override IAtom VisitStmtIf([NotNull] JavaParser.StmtIfContext context)
 		{
 			IAtom conditionExpr = Visit(context.exprpar().expression());
