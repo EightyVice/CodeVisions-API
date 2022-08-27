@@ -16,10 +16,7 @@ namespace LangTrace.Languages.Java
 		public override void SyntaxError([NotNull] IRecognizer recognizer, [Nullable] IToken offendingSymbol, int line, int charPositionInLine, [NotNull] string msg, [Nullable] RecognitionException e)
 		{
 			_interpreter.Status = InterpretationStatus.Failed;
-			string err = $"line: {line} @ {charPositionInLine} [{offendingSymbol.Text}]: {msg}";
-
 			_interpreter.Errors += $"line: {line} @ {charPositionInLine} [{offendingSymbol.Text}]: {msg}\n";
-			Console.WriteLine(err);
 		}
 
 		public ErrorListener(JavaInterpreter interpreter)

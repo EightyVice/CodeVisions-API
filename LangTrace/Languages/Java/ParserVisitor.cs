@@ -134,6 +134,7 @@ namespace LangTrace.Languages.Java
 
 			}
 			VM.Steps.Add(step);
+			VM.Environment.DefineVariable(list);
 			return null;
 		}
 		public override IAtom VisitDeclClass([NotNull] JavaParser.DeclClassContext context)
@@ -388,14 +389,27 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitStmtIf([NotNull] JavaParser.StmtIfContext context)
 		{
+			Step step = new Step();
+			step.GetFromParsingContext(context);
+			step.Event = new Event(EventType.Branching);
+			step.Event.Arguments.Add(context.exprpar().expression().GetText()); // condition
+
 			IAtom conditionExpr = Visit(context.exprpar().expression());
 			bool condition = IsTruthy(conditionExpr);
 
 			if (condition)
+			{
+				step.Event.Arguments.Add("true"); //result
 				Visit(context.statement(0));
+			}
 			else
-				Visit(context.statement(1));
+			{ 
+				step.Event.Arguments.Add("false"); // result
 
+				if(context.statement(1) != null)
+					Visit(context.statement(1));
+			}
+			VM.Steps.Add(step);
 			return null;
 		}
 
@@ -420,13 +434,35 @@ namespace LangTrace.Languages.Java
 			return null;
 		}
 
+		public override IAtom VisitExprEquality([NotNull] JavaParser.ExprEqualityContext context)
+		{
+			IAtom lhs = Visit(context.expression(0));
+			IAtom rhs = Visit(context.expression(1));
+
+			if (lhs is Variable)
+				lhs = ((Variable)lhs).Value;
+			
+			if (rhs is Variable)
+				rhs = ((Variable)rhs).Value;
+			
+			
+			if (context.bop.Text == "==")
+			{
+				if (lhs.Equals(rhs)) return new IntLiteral(1);
+			}
+			else
+			{
+				if (!lhs.Equals(rhs)) return new IntLiteral(1);
+			}
+			return new IntLiteral(0);
+		}
 		public override IAtom VisitExprRightAssociation([NotNull] JavaParser.ExprRightAssociationContext context)
 		{
 			IAtom lhs = Visit(context.expression(0));
 			IAtom rhs = Visit(context.expression(1));
 
 			if (lhs is LValue == false)
-				throw new CompileErrorException("The left hand side has to be a lhs to be assigned to");
+				throw new CompileErrorException("The left hand side has to be a lvalue to be assigned to");
 
 
 			string op = context.bop.Text;
@@ -532,7 +568,7 @@ namespace LangTrace.Languages.Java
 
 		public override IAtom VisitFloatLiteral([NotNull] JavaParser.FloatLiteralContext context)
 		{
-			return new FloatLiteral(float.Parse(context.GetText()));
+			return new FloatLiteral(float.Parse(context.GetText().Replace("f", "")));
 		}
 
 		public override IAtom VisitFuncCall([NotNull] JavaParser.FuncCallContext context)
@@ -545,6 +581,11 @@ namespace LangTrace.Languages.Java
 				return null;
 			}
 
+			if(context.identifier().GetText() == "print") // Dummy print
+			{
+				Console.WriteLine(context.expressionList().expression(0).GetText());
+				return null; 
+			}
 			// RValue-ize the parameter 
 			if (obj is Variable)
 				obj = ((Variable)obj).Value;

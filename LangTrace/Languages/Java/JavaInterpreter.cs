@@ -34,9 +34,12 @@ namespace LangTrace.Languages.Java
 			JavaLexer lexer = new JavaLexer(fs);
 			CommonTokenStream token = new CommonTokenStream(lexer);
 			JavaParser parser = new JavaParser(token);
-			var tree = parser.prog();
-			ParserVisitor visitor = new ParserVisitor(this);
 			parser.AddErrorListener(new ErrorListener(this));
+			var tree = parser.prog();
+			if (Status == InterpretationStatus.Failed)
+				return;
+
+			ParserVisitor visitor = new ParserVisitor(this);
 			tree.Accept(visitor);
 			
 			if(Status == InterpretationStatus.NotYet)

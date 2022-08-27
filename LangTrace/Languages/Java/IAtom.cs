@@ -8,6 +8,6 @@ namespace LangTrace.Languages.Java
 {
 	internal interface IAtom
 	{
-		public DataType Type { get; }
+		// public DataType Type { get; }
 	}
 }

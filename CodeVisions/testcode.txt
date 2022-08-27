@@ -1,4 +1,11 @@
-﻿int x = 3;
+﻿int x = ;
 int[] arr = {1,2,3,4};
 arr[0] = 50;
 arr[2] = 10;
+if(arr[2] == 10.0f) {
+	print(1);
+	print(1);
+	print(1);
+	print(1);
+}
+else print(0);

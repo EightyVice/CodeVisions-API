@@ -89,7 +89,7 @@ namespace LangTrace.Languages.Java
 	internal class Reference : LValue
 	{
 		public string Name { get; set; }
-
+		public string TypeName { get; set; }
 		public Object Object { get; set; }
 
 		public DataType Type => DataType.Pointer;
@@ -119,6 +119,14 @@ namespace LangTrace.Languages.Java
 				if (this.Object.ClassName == ((Object)atom).ClassName)
 					return true;
 				return false;
+			}
+			return false;
+		}
+		public override bool Equals(object? obj)
+		{
+			if(obj is Reference)
+			{
+				return this.Object == obj;
 			}
 			return false;
 		}
@@ -186,6 +194,18 @@ namespace LangTrace.Languages.Java
 		{
 			return Value;
 		}
+
+		public override bool Equals(object? obj)
+		{
+			if(obj is IntLiteral)
+				return this.Value == ((IntLiteral)obj).Value;
+
+			if (obj is FloatLiteral)
+				return this.Value == ((FloatLiteral)obj).Value;
+
+			return false;
+		}
+
 	}
 
 	internal class ArrayVariable : LValue
@@ -213,12 +233,15 @@ namespace LangTrace.Languages.Java
 		}
 	}
 
-	internal class LinkedList
+	internal class LinkedList : LValue
 	{
 		public string Name { get; set; }
 		public int Count { get; set; }
 		private Node head;
 		public Kind NodesKind { get; set; }
+
+		public DataType Type => throw new NotImplementedException();
+
 		public void Add(IAtom data)
 		{
 			if (head == null)
@@ -241,6 +264,16 @@ namespace LangTrace.Languages.Java
 
 				current.Next = toAdd;
 			}
+		}
+
+		public RValue ToRvalue()
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool IsAssignableTo(IAtom atom)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
