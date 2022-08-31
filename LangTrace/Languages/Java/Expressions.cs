@@ -63,8 +63,7 @@ namespace LangTrace.Languages.Java
 	internal class Class
 	{
 		public string Name { get; set; }
-		public DataType Type => DataType.Structure;
-
+	
 		public List<(string name, Kind type)> Members { get; } = new List<(string name, Kind type)>();
 
 		public Class(string name, List<(string name, Kind type)> members) {
@@ -233,54 +232,6 @@ namespace LangTrace.Languages.Java
 		}
 	}
 
-	internal class LinkedList : LValue
-	{
-		public string Name { get; set; }
-		public int Count { get; set; }
-		private Node head;
-		public Kind NodesKind { get; set; }
 
-		public DataType Type => throw new NotImplementedException();
-
-		public void Add(IAtom data)
-		{
-			if (head == null)
-			{
-				head = new Node();
-
-				head.Value = data;
-				head.Next = null;
-			}
-			else
-			{
-				Node toAdd = new Node();
-				toAdd.Value = data;
-
-				Node current = head;
-				while (current.Next != null)
-				{
-					current = current.Next;
-				}
-
-				current.Next = toAdd;
-			}
-		}
-
-		public RValue ToRvalue()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool IsAssignableTo(IAtom atom)
-		{
-			throw new NotImplementedException();
-		}
-	}
-
-	internal class Node
-	{
-		public IAtom Value { get; set; }
-		public Node Next { get; set; }
-	}
 	#endregion
 }

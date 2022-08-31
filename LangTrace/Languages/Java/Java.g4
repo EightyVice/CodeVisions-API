@@ -39,7 +39,7 @@ classDec
     ;
 
 funcCall
-    : identifier '(' expressionList? ')'
+    : expression '(' expressionList? ')'
     ;
 
 type
@@ -83,7 +83,7 @@ expression
     | '(' expression ')'                                                            #ExprGroupedExpression
     | expression bop='.' identifier                                                 #ExprMemberAcess
     | expression '[' expression ']'                                                 #ExprArraySubscription
-    | funcCall                                                                      #ExprFuncCall
+    | expression '(' expressionList? ')'                                            #ExprFuncCall
     | 'new' identifier '(' ')'                                                      #ExprConstructor
     | expression postfix=('++' | '--')                                              #ExprPostfix    
     | prefix=('+'|'-'|'++'|'--') expression                                         #ExprPrefixArthemtic

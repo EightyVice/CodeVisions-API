@@ -3,21 +3,31 @@
 	internal class Environment
 	{
 		private Dictionary<string, LValue> variables = new Dictionary<string, LValue>();
-		private Dictionary<string, Class> structures = new Dictionary<string, Class>();
-	
-		public void DefineStructure(Class structure)
+		private Dictionary<string, Class> classes = new Dictionary<string, Class>();
+		private List<string> symbols = new List<string>();
+		public void DefineClass(Class structure)
 		{
-			if (structures.ContainsKey(structure.Name))
+			if (classes.ContainsKey(structure.Name))
 				throw new CompileErrorException("Structure already defined");
 			else
-				structures.Add(structure.Name, structure);
+				classes.Add(structure.Name, structure);
+		}
+		public void Define(string symbol)
+		{
+			symbols.Add(symbol);
+		}
+		public bool Get(string symbol)
+		{
+			if (symbols.Contains(symbol))
+				return true;
+			return false;
 		}
 		public Class GetStructure(string Name)
 		{
-			if (structures.ContainsKey(Name))
-				return structures[Name];
+			if (classes.ContainsKey(Name))
+				return classes[Name];
 			else
-				throw new CompileErrorException("Structure doesnt exists");
+				throw new CompileErrorException("Class doesnt exists");
 		}
 		public void DefineVariable(LValue variable)
 		{
@@ -74,6 +84,45 @@
 			{
 				throw new CompileErrorException($"{Name} is not defined.");
 			}
+		}
+
+		public readonly Class NodeClass = new Class("Node", new List<(string name, Kind type)>()
+		{
+			("data", new Kind() { IsPrimitive = true, DataType = DataType.Int }),
+			("next", new Kind() { IsReference = true, ClassName = "Node" })
+		});
+
+		public void InitBuiltIns()
+		{
+			// Node class
+			DefineClass(NodeClass);
+		}
+
+		public Reference InitObject(Class Class, string Name)
+		{
+			Object obj = new Object();
+			Reference reference = new Reference(Class.Name, obj);
+			reference.Name = Name;
+
+			foreach (var member in Class.Members)
+			{
+				if (member.type.IsPrimitive)
+				{
+					if (member.type.DataType == DataType.Int)
+						obj.Members.Add(member.name, new Variable(member.name, member.type.DataType, new IntLiteral(0)));
+
+					if (member.type.DataType == DataType.Float)
+						obj.Members.Add(member.name, new Variable(member.name, member.type.DataType, new FloatLiteral(0)));
+				}
+				else if (member.type.IsReference)
+				{
+					obj.Members.Add(member.name, new Reference(member.name, Object.NullRecord));
+				}
+				else
+					throw new CompileErrorException("something wrong");
+			}
+
+			return reference;
 		}
 	}
 }

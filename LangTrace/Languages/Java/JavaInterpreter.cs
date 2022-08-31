@@ -24,6 +24,7 @@ namespace LangTrace.Languages.Java
 		public JavaInterpreter(string SourceCode)
 		{
 			sourceCode = SourceCode;
+			Environment.InitBuiltIns();
 		}
 		public InterpretationStatus Status { get; internal set; } = InterpretationStatus.NotYet;
 

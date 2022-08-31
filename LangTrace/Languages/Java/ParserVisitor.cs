@@ -134,7 +134,7 @@ namespace LangTrace.Languages.Java
 
 			}
 			VM.Steps.Add(step);
-			VM.Environment.DefineVariable(list);
+			VM.Environment.Define(name);
 			return null;
 		}
 		public override IAtom VisitDeclClass([NotNull] JavaParser.DeclClassContext context)
@@ -185,7 +185,7 @@ namespace LangTrace.Languages.Java
 				step.Event.Arguments.Add($"{memType} {memName}");
 			}
 
-			VM.Environment.DefineStructure(new Class(name, members));
+			VM.Environment.DefineClass(new Class(name, members));
 			VM.Steps.Add(step);
 			return null;
 		}
@@ -240,33 +240,9 @@ namespace LangTrace.Languages.Java
 
 		public override IAtom VisitExprConstructor([NotNull] JavaParser.ExprConstructorContext context)
 		{
-			Object obj = new Object();
-			obj.Name = "<unnamed>";
 			string className = context.identifier().GetText();
-
-			Reference reference = new Reference(className, obj);
-			reference.Name = "<unnamed>";
-
-			Class strct = VM.Environment.GetStructure(className);
-			foreach (var member in strct.Members)
-			{
-				if (member.type.IsPrimitive)
-				{
-					if (member.type.DataType == DataType.Int)
-						obj.Members.Add(member.name, new Variable(member.name, member.type.DataType, new IntLiteral(0)));
-
-					if (member.type.DataType == DataType.Float)
-						obj.Members.Add(member.name, new Variable(member.name, member.type.DataType, new FloatLiteral(0)));
-				}
-				else if (member.type.IsReference)
-				{
-					obj.Members.Add(member.name, new Reference(member.name, Object.NullRecord));
-				}
-				else
-					throw new CompileErrorException("something wrong");
-			}
-
-			return reference;
+			Class classDef = VM.Environment.GetStructure(className);
+			return VM.Environment.InitObject(classDef, "<new>");
 		}
 
 		public override IAtom VisitDeclPrimitiveVar([NotNull] JavaParser.DeclPrimitiveVarContext context)
@@ -571,20 +547,59 @@ namespace LangTrace.Languages.Java
 			return new FloatLiteral(float.Parse(context.GetText().Replace("f", "")));
 		}
 
-		public override IAtom VisitFuncCall([NotNull] JavaParser.FuncCallContext context)
+		public override IAtom VisitExprFuncCall([NotNull] JavaParser.ExprFuncCallContext context)
 		{
 			object obj = Visit(context.expressionList().expression(0));
 
-			if (context.identifier().GetText() == "typeof")
+			string funcName = context.expression().GetText();
+			int arity = context.expressionList().expression().Length;
+			if (funcName == "typeof")
 			{
 				Console.WriteLine($"{context.expressionList().expression(0).GetText()} is {obj.ToString().Split('.')[^1]}");
 				return null;
 			}
 
-			if(context.identifier().GetText() == "print") // Dummy print
+			if(funcName == "print") // Dummy print
 			{
 				Console.WriteLine(context.expressionList().expression(0).GetText());
 				return null; 
+			}
+
+			// Thanks to Roaa "vjns" Emad
+			if(funcName == "CreateList")
+			{
+				if (arity == 0)
+					throw new CompileErrorException("Can't create list with zero elements");
+
+				Reference head = VM.Environment.InitObject(VM.Environment.NodeClass, "<unnamed>");		// Node head = new Node();
+				Reference curr = head;      // curr = head;
+				var arguments = context.expressionList().expression();
+
+				for (int i = 0; i < arguments.Length; i++)
+				{
+					var arg = Visit(arguments[i]);
+					if (arg is Variable)
+						arg = ((Variable)arg).Value;
+
+					if (arg is Reference)
+						throw new CompileErrorException("Can't have lists of references");
+
+
+					if (arg is IntLiteral)
+					{
+						if (i == 0)
+						{
+							head.Object.Members["data"] = new Variable("<head.data>", DataType.Int, arg);
+							continue;
+						}
+
+						Reference n = VM.Environment.InitObject(VM.Environment.NodeClass, "<unnamed>");     // Node n = new Node();
+						n.Object.Members["data"] = new Variable("<node.data>", DataType.Int, arg);          // n.data = arg;
+						curr.Object.Members["next"] = n;                                                    // curr.next = n;
+						curr = n;                                                                           // curr = n;
+					}
+				}
+				return head;																				// head
 			}
 			// RValue-ize the parameter 
 			if (obj is Variable)
@@ -594,15 +609,6 @@ namespace LangTrace.Languages.Java
 				obj = ((IntLiteral)obj).Value;
 
 			Console.WriteLine(obj);
-			return null;
-			string name = context.identifier().GetText();
-			List<object> args = new List<object>();
-			foreach (var arg in context.expressionList().expression())
-			{
-				args.Add(Visit(arg));
-			}
-
-			//Statements.Add(new FunctionCall(name, args));
 			return null;
 		}
 		public override IAtom VisitExprGroupedExpression([NotNull] JavaParser.ExprGroupedExpressionContext context)
