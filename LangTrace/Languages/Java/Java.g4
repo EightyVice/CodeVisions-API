@@ -119,11 +119,14 @@ statement
     | 'while' exprpar statement                             #StmtWhile
     | 'do' statement 'while' exprpar ';'                    #StmtDoWhile
     | 'return' expression? ';'                              #StmtReturn
-    //| 'for' '(' forControl ')' statement
+    | 'for' '(' forControl ')' statement                    #StmtFor
     | statementExpression=expression ';'                    #StmtExpression
     | ';'                                                   #EmptyStatement
     ;
 
+forControl
+    : primitive ';' expression? ';' expressionList?
+    ;
 
 exprpar
     : '(' expression ')'
@@ -226,4 +229,15 @@ fragment Letter
     : [a-zA-Z$_] // these are the "java letters" below 0x7F
     | ~[\u0000-\u007F\uD800-\uDBFF] // covers all characters above 0x7F which are not a surrogate
     | [\uD800-\uDBFF] [\uDC00-\uDFFF] // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
+    ;
+
+WS  :  [ \t\r\n\u000C]+ -> skip
+    ;
+
+COMMENT
+    :   '/*' .*? '*/' -> skip
+    ;
+
+LINE_COMMENT
+    :   '//' ~[\r\n]* -> skip
     ;

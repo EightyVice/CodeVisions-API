@@ -81,11 +81,24 @@ namespace LangTrace.Languages.Java
 
 		public static readonly Object NullRecord = new Object();
 
+		public override string ToString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.AppendLine($"@{ClassName} {Name}");
+			foreach(var member in Members)
+			{
+				if (member.Value is Variable)
+					sb.AppendLine(member.Key + ": " + ((Literal)((Variable)member.Value).Value).GetLiteral().ToString());
+				if (member.Value is Reference)
+					sb.AppendLine(member.Key + ": " + ((Reference)member.Value).Object.ToString());
+			}
+			return sb.ToString();
+		}
 	}
 
 
 
-	internal class Reference : LValue
+	internal class Reference : LValue, IAtom
 	{
 		public string Name { get; set; }
 		public string TypeName { get; set; }
@@ -125,7 +138,7 @@ namespace LangTrace.Languages.Java
 		{
 			if(obj is Reference)
 			{
-				return this.Object == obj;
+				return this.Object == ((Reference)obj).Object;
 			}
 			return false;
 		}
@@ -134,7 +147,21 @@ namespace LangTrace.Languages.Java
 	#region Literals
 
 
+	internal class StringLiteral : Literal, IAtom, RValue
+	{
+		public readonly string Value;
+		public StringLiteral(string value)
+		{
+			Value = value;
+		}
 
+		public static StringLiteral operator +(StringLiteral lhs, StringLiteral rhs) => new StringLiteral(lhs.Value + rhs.Value);
+
+		public override object GetLiteral()
+		{
+			return Value;
+		}
+	}
 	internal class FloatLiteral : Literal, IAtom, RValue
 	{
 		public readonly float Value;
@@ -144,7 +171,7 @@ namespace LangTrace.Languages.Java
 			Value = value;
 		}
 
-		public DataType Type => DataType.Float;
+		
 		
 		// float op float -> float
 		public static FloatLiteral operator+(FloatLiteral lhs, FloatLiteral rhs) =>  new FloatLiteral(lhs.Value + rhs.Value);
@@ -175,7 +202,6 @@ namespace LangTrace.Languages.Java
 			Value = value;
 		}
 
-		public DataType Type => DataType.Int;
 
 		// int op int -> int
 		public static IntLiteral operator +(IntLiteral lhs, IntLiteral rhs) => new IntLiteral(lhs.Value + rhs.Value);

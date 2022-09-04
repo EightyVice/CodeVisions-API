@@ -1,1 +1,23 @@
-﻿Node head = CreateList(1,2,3);
+﻿// Question
+Node head = CreateList(1,2,3);
+Node p = head;
+Node r = head.next.next;
+
+// Answer
+r=   p.next;
+
+
+
+
+
+
+
+
+
+
+
+
+
+[START TEST CODE]
+if(r == p.next) pass(); else fail();
+

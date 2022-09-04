@@ -311,6 +311,15 @@ namespace LangTrace.Languages.Java
 		#region Statements
 		private bool IsTruthy(IAtom conditionExpr)
 		{
+
+			if(conditionExpr is Reference)
+			{
+				if (((Reference)conditionExpr).Object == Object.NullRecord)
+					return false;
+				else
+					return true;
+			}
+
 			if (conditionExpr is Variable)
 				conditionExpr = ((Variable)conditionExpr).Value;
 
@@ -323,6 +332,17 @@ namespace LangTrace.Languages.Java
 			}
 			return false;
 		}
+		public override IAtom VisitStmtWhile([NotNull] JavaParser.StmtWhileContext context)
+		{
+			IAtom condition = Visit(context.exprpar().expression());
+			while (IsTruthy(condition))
+			{
+				Visit(context.statement());
+			}
+			return null;
+		}
+		
+
 		public override IAtom VisitExprMemberAcess([NotNull] JavaParser.ExprMemberAcessContext context)
 		{
 			IAtom _ref = Visit(context.expression());
@@ -559,15 +579,24 @@ namespace LangTrace.Languages.Java
 				return null;
 			}
 
-			if(funcName == "print") // Dummy print
+			if(funcName == "valueof") // Dummy print
 			{
-				Console.WriteLine(context.expressionList().expression(0).GetText());
+				if(obj is Variable)
+					Console.WriteLine(((Literal)((Variable)obj).Value).GetLiteral().ToString());
+
+				if (obj is Reference)
+					Console.WriteLine(((Reference)obj).Object.ToString());
+
 				return null; 
 			}
 
 			// Thanks to Roaa "vjns" Emad
 			if(funcName == "CreateList")
 			{
+				Step step = new Step();
+				step.GetFromParsingContext(context);
+				step.Event = new Event(EventType.DeclareLinkedList);
+
 				if (arity == 0)
 					throw new CompileErrorException("Can't create list with zero elements");
 
@@ -587,6 +616,7 @@ namespace LangTrace.Languages.Java
 
 					if (arg is IntLiteral)
 					{
+						step.Event.Arguments.Add(((IntLiteral)arg).Value.ToString());
 						if (i == 0)
 						{
 							head.Object.Members["data"] = new Variable("<head.data>", DataType.Int, arg);
@@ -599,6 +629,7 @@ namespace LangTrace.Languages.Java
 						curr = n;                                                                           // curr = n;
 					}
 				}
+				VM.Steps.Add(step);
 				return head;																				// head
 			}
 			// RValue-ize the parameter 
