@@ -24,8 +24,8 @@ namespace LangTrace.Languages
 	public class Event
 	{
 		public EventType EventID { get; set; }
-		public List<string> Arguments { get; set; } = new List<string>();
-		
+		//public List<string> Arguments { get; set; } = new List<string>();
+		public dynamic Data { get; set; }
 		public Event(EventType id)
 		{
 			EventID = id;

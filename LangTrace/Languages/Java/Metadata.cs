@@ -8,8 +8,20 @@ namespace LangTrace.Languages.Java
 {
 	internal class Metadata
 	{
-		private Dictionary<string, int> functionCalls = new Dictionary<string, int>();
+		public Dictionary<string, int> FunctionsCalls = new Dictionary<string, int>();
 		private Dictionary<string, int> variableAccesses = new Dictionary<string, int>();
-		private int NumberOfStatementsExecuted { get; }
+		public int NumberOfStatementsExecuted { get; }
+
+		public void CallFunction(string name)
+		{
+			if (FunctionsCalls.ContainsKey(name)) FunctionsCalls[name]++;
+			else FunctionsCalls[name] = 1;
+		}
+		
+		public void AccessLValue(string name)
+		{
+			if (variableAccesses.ContainsKey(name)) variableAccesses[name]++;
+			else variableAccesses[name] = 1;
+		}
 	}
 }

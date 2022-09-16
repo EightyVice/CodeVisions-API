@@ -1,4 +1,7 @@
-﻿namespace CodeVisions.Models
+﻿using LangTrace.Languages;
+using LangTrace.Languages.Java;
+
+namespace CodeVisions.Models
 {
 	public class CodeRequest
 	{
@@ -11,5 +14,13 @@
 	public class Options
 	{
 		public bool AllowLoops { get; set; } = false;
+	}
+
+	public class CodeResponse
+	{
+		public bool HasErrors { get; set; }
+		public List<Step> Steps { get; set; }
+		public string Errors { get; set; }
+		public bool TestSuccess { get; set; }
 	}
 }

@@ -13,6 +13,8 @@ namespace LangTrace.Languages
 	{
 		private string testcode;
 		private JavaInterpreter VM;
+		public bool Success { get; set; }
+
 		public Tester(string testCode, JavaInterpreter vm)
 		{
 			testcode = testCode;

@@ -1,6 +1,5 @@
 #define CODE_TEST
 
-
 //#undef CODE_TEST
 
 
@@ -9,12 +8,12 @@ using System.Text.Json;
 using LangTrace;
 using LangTrace.Languages.Java;
 
-var inputs = File.ReadAllText("testcode.txt").Split("[START TEST CODE]");
+var inputs = File.ReadAllText("testcode.txt").Split("@Test:");
 
-JavaInterpreter interpreter = new JavaInterpreter(inputs[0], inputs[1]);
+JavaInterpreter interpreter = new JavaInterpreter(inputs[0]);
 interpreter.Interpret();
-if (interpreter.Status == InterpretationStatus.Success) ;
-	//Console.WriteLine(JsonSerializer.Serialize(interpreter.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
+if (interpreter.Status == InterpretationStatus.Success)
+	Console.WriteLine(JsonSerializer.Serialize(interpreter.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
 else if (interpreter.Status == InterpretationStatus.Failed)
 	Console.WriteLine(interpreter.Errors);
 else

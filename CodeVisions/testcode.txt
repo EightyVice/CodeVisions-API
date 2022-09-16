@@ -1,23 +1,10 @@
-﻿// Question
-Node head = CreateList(1,2,3);
-Node p = head;
-Node r = head.next.next;
-
-// Answer
-r=   p.next;
+﻿while(1) func();
 
 
+@Test:
+c = calls("func");
 
-
-
-
-
-
-
-
-
-
-
-[START TEST CODE]
-if(r == p.next) pass(); else fail();
-
+if c == 3 then
+	pass("Good Job")
+else
+	pass("Expected to bc called)

@@ -2,9 +2,10 @@
 {
 	internal class Environment
 	{
-		private Dictionary<string, LValue> variables = new Dictionary<string, LValue>();
+		private Dictionary<string, object> variables = new Dictionary<string, object>();
 		private Dictionary<string, Class> classes = new Dictionary<string, Class>();
-		private List<string> symbols = new List<string>();
+		private List<Object> objects = new List<Object>();
+
 		public void DefineClass(Class structure)
 		{
 			if (classes.ContainsKey(structure.Name))
@@ -12,16 +13,7 @@
 			else
 				classes.Add(structure.Name, structure);
 		}
-		public void Define(string symbol)
-		{
-			symbols.Add(symbol);
-		}
-		public bool Get(string symbol)
-		{
-			if (symbols.Contains(symbol))
-				return true;
-			return false;
-		}
+
 		public Class GetStructure(string Name)
 		{
 			if (classes.ContainsKey(Name))
@@ -50,7 +42,7 @@
 		{
 			if (variables.ContainsKey(Name))
 			{
-				return variables[Name];
+				return (LValue)variables[Name];
 			}
 			else
 			{
@@ -66,7 +58,6 @@
 			else
 			{
 				variables.Add(Name, new Variable(Name, type, init));
-
 			}
 		}
 
@@ -98,11 +89,11 @@
 			DefineClass(NodeClass);
 		}
 
-		public Reference InitObject(Class Class, string Name)
+		public Reference InitObject(Class Class)
 		{
 			Object obj = new Object();
 			Reference reference = new Reference(Class.Name, obj);
-			reference.Name = Name;
+			reference.Name = "<unnamed>";
 
 			foreach (var member in Class.Members)
 			{
@@ -116,12 +107,13 @@
 				}
 				else if (member.type.IsReference)
 				{
-					obj.Members.Add(member.name, new Reference(member.name, Object.NullRecord));
+					obj.Members.Add(member.name, new Reference(member.name, Object.NullObject) { ParentObject = objects.Count});
 				}
 				else
 					throw new CompileErrorException("something wrong");
 			}
-
+			obj.id = objects.Count;
+			objects.Add(obj);
 			return reference;
 		}
 	}

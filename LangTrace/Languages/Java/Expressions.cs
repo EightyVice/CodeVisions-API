@@ -74,17 +74,17 @@ namespace LangTrace.Languages.Java
 
 	internal class Object
 	{
-		public string Name { get; set; }
+		public int id { get; set; }
 		public string ClassName { get; set; }
 
 		public Dictionary<string, LValue> Members = new Dictionary<string, LValue>();
 
-		public static readonly Object NullRecord = new Object();
+		public static readonly Object NullObject = new Object() {id = -1};
 
 		public override string ToString()
 		{
 			StringBuilder sb = new StringBuilder();
-			sb.AppendLine($"@{ClassName} {Name}");
+			sb.AppendLine($"@{ClassName} {id}");
 			foreach(var member in Members)
 			{
 				if (member.Value is Variable)
@@ -104,6 +104,7 @@ namespace LangTrace.Languages.Java
 		public string TypeName { get; set; }
 		public Object Object { get; set; }
 
+		public int ParentObject { get; set; } = -1;
 		public DataType Type => DataType.Pointer;
 
 		public Reference(string name, Object @object)

@@ -21,8 +21,10 @@ namespace LangTrace.Languages.Java
 		public List<Step> Steps { get; private set; } = new List<Step>();
 		internal Environment Environment { get; private set; } = new Environment();
 
-		internal Tester Tester { get; private set; } = null;
+		internal Metadata Metadata { get; private set; } = new Metadata();
+		internal Tester Tester { get; private set; }
 
+		public bool TesterResult { get => Tester.Success; }
 		public JavaInterpreter(string SourceCode)
 		{
 			sourceCode = SourceCode;
@@ -54,7 +56,8 @@ namespace LangTrace.Languages.Java
 			if(Status == InterpretationStatus.NotYet)
 				Status = InterpretationStatus.Success; // else it will be a failure...
 
-			Tester?.Validate();
+			//Tester.Validate();
+			//Console.WriteLine(Tester.Success);
 		}
 	}
 }

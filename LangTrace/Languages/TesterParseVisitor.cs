@@ -18,9 +18,44 @@ namespace LangTrace.Languages
 	internal class TesterParseVisitor : JavaBaseVisitor<IAtom> 
 	{
 		private JavaInterpreter VM;
+
+		Dictionary<string, Callable> Functions;
 		public TesterParseVisitor(JavaInterpreter vm)
 		{
 			VM = vm;
+			Functions = new Dictionary<string, Callable>()
+			{
+				{ "pass", new Callable(){
+					Name = "pass",
+					Arity = 0,
+					Body = (args) => {
+						Console.ForegroundColor = ConsoleColor.Green;
+						Console.WriteLine("Correct!");
+						Console.ResetColor();
+						VM.Tester.Success = true;
+						return null;
+					}
+				}},
+				{ "fail", new Callable(){
+					Name = "fail",
+					Arity = 0,
+					Body = (args) => {
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine("Wrong!");
+						Console.ResetColor();
+						VM.Tester.Success = false;
+						return null;
+					}
+				}},
+				{ "typeof", new Callable(){
+					Name = "typeof",
+					Arity = 1,
+					Body = (args) => {
+						Console.WriteLine($"{args[0]} is {args[1].ToString().Split('.')[^1]}");
+						return null;
+					}
+				}}
+			};
 		}
 
 		void Output(string text)
@@ -30,45 +65,13 @@ namespace LangTrace.Languages
 			Console.ResetColor();
 		}
 
-		Dictionary<string, Callable> Functions = new Dictionary<string, Callable>()
-		{
-			{ "pass", new Callable(){
-				Name = "pass",
-				Arity = 0,
-				Body = (args) => {
-					Console.ForegroundColor = ConsoleColor.Green;
-					Console.WriteLine("Correct!");
-					Console.ResetColor();
-					return null;
-				}
-			}},
-			{ "fail", new Callable(){
-				Name = "fail",
-				Arity = 0,
-				Body = (args) => {
-					Console.ForegroundColor = ConsoleColor.Red;
-					Console.WriteLine("Wrong!");
-					Console.ResetColor();
-					return null;
-				}
-			}},
-			{ "typeof", new Callable(){
-				Name = "typeof",
-				Arity = 1,
-				Body = (args) => {
-					Console.WriteLine($"{args[0]} is {args[1].ToString().Split('.')[^1]}");
-					return null;
-				}
-			}}
-		};
-
 		#region Statements
 		private bool IsTruthy(IAtom conditionExpr)
 		{
 
 			if (conditionExpr is Reference)
 			{
-				if (((Reference)conditionExpr).Object == Object.NullRecord)
+				if (((Reference)conditionExpr).Object == Object.NullObject)
 					return false;
 				else
 					return true;
@@ -218,7 +221,7 @@ namespace LangTrace.Languages
 			if (_ref is Reference == false)
 				throw new CompileErrorException("Only can access references");
 
-			if (((Reference)_ref).Object == Object.NullRecord)
+			if (((Reference)_ref).Object == Object.NullObject)
 				throw new CompileErrorException("NullReferenceException");
 
 			string member = context.identifier().GetText();
@@ -228,7 +231,7 @@ namespace LangTrace.Languages
 			if (members.ContainsKey(member))
 				return members[member];
 			else
-				throw new CompileErrorException($"record {((Object)_ref).Name} doesn't have member '{member}'");
+				throw new CompileErrorException($"record {((Object)_ref).id} doesn't have member '{member}'");
 		}
 
 		public override IAtom VisitExprFuncCall([NotNull] JavaParser.ExprFuncCallContext context)
@@ -240,14 +243,17 @@ namespace LangTrace.Languages
 			if(context.expressionList() != null)
 				arity = context.expressionList().expression().Length;
 
-			if(Functions.ContainsKey(funcName))
+			List<IAtom> args = new List<IAtom>();
+			for (int i = 0; i < arity; i++) args.Add(Visit(context.expressionList().expression(i)));
+
+			if (Functions.ContainsKey(funcName))
 			{
 				Callable func = Functions[funcName];
 				if (func.Arity == arity)
 				{
-					List<IAtom> args = new List<IAtom>();
-					for (int i = 0; i < arity; i++) args.Add(Visit(context.expressionList().expression(i)));
-					func.Body.Invoke(args.ToArray());
+					List<IAtom> arguments = new List<IAtom>();
+					for (int i = 0; i < arity; i++) arguments.Add(Visit(context.expressionList().expression(i)));
+					func.Body.Invoke(arguments.ToArray());
 				}
 				else 
 					throw new CompileErrorException("Different number of arguments");

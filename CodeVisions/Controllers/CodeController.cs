@@ -29,24 +29,37 @@ namespace CodeVisions.Controllers
 		[HttpPost]
 		public object Post([FromBody] Models.CodeRequest request)
 		{
+			Models.CodeResponse response = new Models.CodeResponse(); 
+
 			if(request.Language.ToLower() == "java")
 			{
-				JavaInterpreter interpreter = new JavaInterpreter(request.Code);
+				JavaInterpreter interpreter = new JavaInterpreter(request.Code, request.TestCode);
 				interpreter.Interpret();
+
+
 				if(interpreter.Status == InterpretationStatus.Success)
 				{
-					return interpreter.Steps;
+					response.HasErrors = false;
+					response.Steps = interpreter.Steps;
+
+					if (interpreter.TesterResult)
+						response.TestSuccess = true;
+					else
+						response.TestSuccess = false;
+
 				}
 				else if(interpreter.Status == InterpretationStatus.Failed)
 				{
-					return interpreter.Errors;
+					response.HasErrors = true;
+					response.Errors = interpreter.Errors;
+					response.TestSuccess = false;
 				}
 				else
 				{
 					return null;
 				}
 			}
-			return null;
+			return response;
 		}
 
 		// PUT api/<CodeController>/5

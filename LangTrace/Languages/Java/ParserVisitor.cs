@@ -105,38 +105,7 @@ namespace LangTrace.Languages.Java
 		#endregion
 
 		#region Declaration
-		public override IAtom VisitDeclList([NotNull] JavaParser.DeclListContext context)
-		{
-			Step step = new Step();
-			step.GetFromParsingContext(context);
-			step.Event = new Event(EventType.DeclareLinkedList);
 
-			string name = context.linkedList().identifier().GetText();
-			string type = context.linkedList().type().GetText();
-			step.Event.Arguments.Add(type);
-			step.Event.Arguments.Add(name);
-			LinkedList list = new LinkedList();
-			list.Name = name;
-			Kind kind = new Kind() { IsPrimitive = true };
-			list.NodesKind = kind;
-			if (context.linkedList().arrayInit() != null)
-			{
-				var inits = context.linkedList().arrayInit().initializer();
-				foreach (var init in inits)
-				{
-					IAtom i = Visit(init);
-					if (IsKindLikeLiteral(kind, i))
-					{
-						list.Add(new Variable("<unnamed>", DataType.Int, i));
-						step.Event.Arguments.Add(((Literal)i).GetLiteral().ToString());
-					}
-				}
-
-			}
-			VM.Steps.Add(step);
-			VM.Environment.Define(name);
-			return null;
-		}
 		public override IAtom VisitDeclClass([NotNull] JavaParser.DeclClassContext context)
 		{
 			Step step = new Step();
@@ -145,7 +114,11 @@ namespace LangTrace.Languages.Java
 
 			// class name
 			string name = context.classDec().identifier().GetText();
-			step.Event.Arguments.Add(name);
+			step.Event.Data = new
+			{
+				Name = name,
+				Members = new List<string[]>()
+			};
 
 			List<(string name, Kind type)> members = new List<(string name, Kind type)>();
 
@@ -182,7 +155,8 @@ namespace LangTrace.Languages.Java
 				}
 
 				members.Add((memName, kind));
-				step.Event.Arguments.Add($"{memType} {memName}");
+				step.Event.Data.Members.Add(new string[] {memType, memName});
+
 			}
 
 			VM.Environment.DefineClass(new Class(name, members));
@@ -208,8 +182,8 @@ namespace LangTrace.Languages.Java
 					step = new Step();
 					step.GetFromParsingContext(context);
 					step.Event = new Event(EventType.InitReference);
-					step.Event.Arguments.Add(structName);
-					step.Event.Arguments.Add(name);
+
+					string objid = null;
 					if (declarator.initializer() != null)
 					{
 						init = Visit(declarator.initializer().expression());
@@ -219,21 +193,27 @@ namespace LangTrace.Languages.Java
 						else
 							throw new CompileErrorException("Can't assign ");
 
-						step.Event.Arguments.Add("<new>");
+						objid = rec.id.ToString();
 					}
 					else
 					{
-						rec = Object.NullRecord;
-						step.Event.Arguments.Add("null");
+						rec = Object.NullObject;
+						objid = "null";
 					}
 
+					step.Event.Data = new
+					{
+						Class = structName,
+						Name = name,
+						Init = objid
+					};
+					
 					Reference reference = new Reference(name, rec);
-
 					VM.Environment.DefineVariable(reference);
+					VM.Steps.Add(step);
 				}
 			}
 
-			VM.Steps.Add(step);
 			return null;
 		}
 
@@ -242,7 +222,7 @@ namespace LangTrace.Languages.Java
 		{
 			string className = context.identifier().GetText();
 			Class classDef = VM.Environment.GetStructure(className);
-			return VM.Environment.InitObject(classDef, "<new>");
+			return VM.Environment.InitObject(classDef);
 		}
 
 		public override IAtom VisitDeclPrimitiveVar([NotNull] JavaParser.DeclPrimitiveVarContext context)
@@ -262,10 +242,11 @@ namespace LangTrace.Languages.Java
 				if (initializer.arrayInit() != null)
 				{
 					step.Event = new Event(EventType.InitArray);
-					step.Event.Arguments.Add(typeName);
-					step.Event.Arguments.Add(_name);
+
 
 					List<Variable> inits = new List<Variable>();
+					List<string> values = new List<string>();
+
 					// For now, first-dimension arrays only
 					foreach (var init in initializer.arrayInit().initializer())
 					{
@@ -279,15 +260,19 @@ namespace LangTrace.Languages.Java
 						else
 							throw new CompileErrorException("Different types");
 
-						step.Event.Arguments.Add(((Literal)initVal).GetLiteral().ToString());
+						values.Add(((Literal)initVal).GetLiteral().ToString());
 						primitive = new ArrayVariable(_name, inits.ToArray());
 					}
+					step.Event.Data = new
+					{
+						Type = typeName,
+						Name = _name,
+						Values = values.ToArray()
+					};
 				}
 				else
 				{
 					step.Event = new Event(EventType.InitVariable);
-					step.Event.Arguments.Add(typeName);
-					step.Event.Arguments.Add(_name);
 					IAtom val = Visit(initializer.expression());
 					if(val is Variable)
 						val = ((Variable)val).Value;
@@ -296,7 +281,14 @@ namespace LangTrace.Languages.Java
 						primitive = new Variable(_name, _type, val);
 					else
 						throw new CompileErrorException("Can't assign!");
-					step.Event.Arguments.Add(((Literal)val).GetLiteral().ToString());
+					string value = (((Literal)val).GetLiteral().ToString());
+
+					step.Event.Data = new
+					{
+						Type = typeName,
+						Name = _name,
+						Values = value
+					};
 				}
 
 				VM.Environment.DefineVariable(primitive);
@@ -305,16 +297,16 @@ namespace LangTrace.Languages.Java
 
 			return null;
 		}
-		#endregion
+#endregion
 
 
-		#region Statements
+#region Statements
 		private bool IsTruthy(IAtom conditionExpr)
 		{
 
 			if(conditionExpr is Reference)
 			{
-				if (((Reference)conditionExpr).Object == Object.NullRecord)
+				if (((Reference)conditionExpr).Object == Object.NullObject)
 					return false;
 				else
 					return true;
@@ -335,9 +327,9 @@ namespace LangTrace.Languages.Java
 		public override IAtom VisitStmtWhile([NotNull] JavaParser.StmtWhileContext context)
 		{
 			IAtom condition = Visit(context.exprpar().expression());
-			while (IsTruthy(condition))
+			for (int i = 0; IsTruthy(condition) && i < 50; i++) // Limit while loops to 50 times
 			{
-				Visit(context.statement());
+				Visit(context.statement());				
 			}
 			return null;
 		}
@@ -349,7 +341,7 @@ namespace LangTrace.Languages.Java
 			if (_ref is Reference == false)
 				throw new CompileErrorException("Only can access references");
 
-			if (((Reference)_ref).Object == Object.NullRecord)
+			if (((Reference)_ref).Object == Object.NullObject)
 				throw new CompileErrorException("NullReferenceException");
 
 			string member = context.identifier().GetText();
@@ -357,9 +349,14 @@ namespace LangTrace.Languages.Java
 			var members = ((Reference)_ref).Object.Members;
 
 			if (members.ContainsKey(member))
+			{
+				if(members[member] is Reference)
+					((Reference)members[member]).ParentObject = ((Reference)_ref).Object.id;
+	
 				return members[member];
+			}
 			else
-				throw new CompileErrorException($"record {((Object)_ref).Name} doesn't have member '{member}'");
+				throw new CompileErrorException($"record {((Object)_ref).id} doesn't have member '{member}'");
 		}
 		public override IAtom VisitExprArraySubscription([NotNull] JavaParser.ExprArraySubscriptionContext context)
 		{
@@ -388,31 +385,35 @@ namespace LangTrace.Languages.Java
 			Step step = new Step();
 			step.GetFromParsingContext(context);
 			step.Event = new Event(EventType.Branching);
-			step.Event.Arguments.Add(context.exprpar().expression().GetText()); // condition
+			string condtext = context.exprpar().expression().GetText(); // condition
 
 			IAtom conditionExpr = Visit(context.exprpar().expression());
 			bool condition = IsTruthy(conditionExpr);
 
 			if (condition)
 			{
-				step.Event.Arguments.Add("true"); //result
 				Visit(context.statement(0));
 			}
 			else
 			{ 
-				step.Event.Arguments.Add("false"); // result
-
 				if(context.statement(1) != null)
 					Visit(context.statement(1));
 			}
+
+			step.Event.Data = new
+			{
+				Condition = condtext,
+				Result = condition
+			};
+
 			VM.Steps.Add(step);
 			return null;
 		}
 
 
-		#endregion
+#endregion
 
-		#region Expressions
+#region Expressions
 		public override IAtom VisitExprAS([NotNull] JavaParser.ExprASContext context)
 		{
 			IAtom lhs = Visit(context.expression(0));
@@ -456,6 +457,8 @@ namespace LangTrace.Languages.Java
 		{
 			IAtom lhs = Visit(context.expression(0));
 			IAtom rhs = Visit(context.expression(1));
+			string lname = context.expression(0).GetText();
+			string rname = context.expression(1).GetText();
 
 			if (lhs is LValue == false)
 				throw new CompileErrorException("The left hand side has to be a lvalue to be assigned to");
@@ -475,14 +478,21 @@ namespace LangTrace.Languages.Java
 						{
 							Reference left = (Reference)lhs;
 							Reference right = (Reference)rhs;
+							Object oldObj = left.Object;
 							if (left.Object.ClassName == right.Object.ClassName)
 								left.Object = right.Object;
 							else
 								throw new CompileErrorException("Only can assign same reference types");
 
-							step.Event.Arguments.Add(left.Name);
-							step.Event.Arguments.Add(left.Object.Name);
-							step.Event.Arguments.Add(right.Name);
+							step.Event.Data = new
+							{
+								LhsName = lname,
+								OldId = oldObj.id,
+								NewId = right.Object.id,
+								ParentObject = left.ParentObject,
+								RhsName = rname
+							};
+
 
 							VM.Steps.Add(step);
 							return right;
@@ -524,9 +534,13 @@ namespace LangTrace.Languages.Java
 								((Variable)lhs).Value = ((IntLiteral)rhs);
 						}
 
-						step.Event.Arguments.Add(context.expression(0).GetText());
-						step.Event.Arguments.Add(oldVal.ToString());
-						step.Event.Arguments.Add(((Literal)rhs).GetLiteral().ToString());
+						step.Event.Data = new
+						{
+							Lhs = context.expression(0).GetText(),
+							OldValue = oldVal,
+							NewValue = ((Literal)rhs).GetLiteral()
+						};
+
 
 						VM.Steps.Add(step);
 						return rhs;
@@ -554,9 +568,9 @@ namespace LangTrace.Languages.Java
 			return null;
 
 		}
-		#endregion
+#endregion
 
-		#region Literals
+#region Literals
 		public override IAtom VisitIntegerLiteral([NotNull] JavaParser.IntegerLiteralContext context)
 		{
 			return new IntLiteral(int.Parse(context.GetText()));
@@ -569,19 +583,20 @@ namespace LangTrace.Languages.Java
 
 		public override IAtom VisitExprFuncCall([NotNull] JavaParser.ExprFuncCallContext context)
 		{
-			object obj = Visit(context.expressionList().expression(0));
 
 			string funcName = context.expression().GetText();
-			int arity = context.expressionList().expression().Length;
+			int? arity = context.expressionList()?.expression().Length;
 			if (funcName == "typeof")
 			{
+				object obj = Visit(context.expressionList().expression(0));
 				Console.WriteLine($"{context.expressionList().expression(0).GetText()} is {obj.ToString().Split('.')[^1]}");
 				return null;
 			}
 
 			if(funcName == "valueof") // Dummy print
 			{
-				if(obj is Variable)
+				object obj = Visit(context.expressionList().expression(0));
+				if (obj is Variable)
 					Console.WriteLine(((Literal)((Variable)obj).Value).GetLiteral().ToString());
 
 				if (obj is Reference)
@@ -593,16 +608,17 @@ namespace LangTrace.Languages.Java
 			// Thanks to Roaa "vjns" Emad
 			if(funcName == "CreateList")
 			{
-				Step step = new Step();
-				step.GetFromParsingContext(context);
-				step.Event = new Event(EventType.DeclareLinkedList);
+				Step _step = new Step();
+				_step.GetFromParsingContext(context);
+				_step.Event = new Event(EventType.DeclareLinkedList);
 
 				if (arity == 0)
 					throw new CompileErrorException("Can't create list with zero elements");
-
-				Reference head = VM.Environment.InitObject(VM.Environment.NodeClass, "<unnamed>");		// Node head = new Node();
+		
+				Reference head = VM.Environment.InitObject(VM.Environment.NodeClass);		// Node head = new Node();
 				Reference curr = head;      // curr = head;
 				var arguments = context.expressionList().expression();
+				List<string> items = new List<string>();
 
 				for (int i = 0; i < arguments.Length; i++)
 				{
@@ -616,31 +632,39 @@ namespace LangTrace.Languages.Java
 
 					if (arg is IntLiteral)
 					{
-						step.Event.Arguments.Add(((IntLiteral)arg).Value.ToString());
+						items.Add(((IntLiteral)arg).Value.ToString());
 						if (i == 0)
 						{
 							head.Object.Members["data"] = new Variable("<head.data>", DataType.Int, arg);
 							continue;
 						}
 
-						Reference n = VM.Environment.InitObject(VM.Environment.NodeClass, "<unnamed>");     // Node n = new Node();
+						Reference n = VM.Environment.InitObject(VM.Environment.NodeClass);					// Node n = new Node();
 						n.Object.Members["data"] = new Variable("<node.data>", DataType.Int, arg);          // n.data = arg;
 						curr.Object.Members["next"] = n;                                                    // curr.next = n;
 						curr = n;                                                                           // curr = n;
 					}
 				}
-				VM.Steps.Add(step);
+				_step.Event.Data = items;
+				VM.Steps.Add(_step);
 				return head;																				// head
 			}
-			// RValue-ize the parameter 
-			if (obj is Variable)
-				obj = ((Variable)obj).Value;
 
-			else if (obj is IntLiteral)
-				obj = ((IntLiteral)obj).Value;
+			VM.Metadata.CallFunction(funcName);
 
-			Console.WriteLine(obj);
+			Step step = new Step();
+			step.GetFromParsingContext(context);
+			step.Event = new Event(EventType.CallFunction);
+
+			step.Event.Data = new
+			{
+				Name = funcName,
+				CallsCount = VM.Metadata.FunctionsCalls[funcName]
+			};
+
+			VM.Steps.Add(step);
 			return null;
+
 		}
 		public override IAtom VisitExprGroupedExpression([NotNull] JavaParser.ExprGroupedExpressionContext context)
 		{
@@ -651,7 +675,7 @@ namespace LangTrace.Languages.Java
 			return VM.Environment.GetLValue(context.identifier().GetText());
 		}
 
-		#endregion
+#endregion
 
 	}
 }
