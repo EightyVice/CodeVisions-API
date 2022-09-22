@@ -1,10 +1,7 @@
-﻿while(1) func();
-
+﻿a = 3
+if a == 3:
+	a = 4
+else
+	a = 5
 
 @Test:
-c = calls("func");
-
-if c == 3 then
-	pass("Good Job")
-else
-	pass("Expected to bc called)

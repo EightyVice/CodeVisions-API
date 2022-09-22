@@ -19,8 +19,10 @@ namespace CodeVisions.Models
 	public class CodeResponse
 	{
 		public bool HasErrors { get; set; }
-		public List<Step> Steps { get; set; }
-		public string Errors { get; set; }
-		public bool TestSuccess { get; set; }
+		public ICollection<Step> Steps { get; set; }
+		public ICollection<string> Errors { get; set; }
+		public ICollection<string> TestLogs { get; set; }
+		public ICollection<CaseResult> CaseResults { get; set; }
+
 	}
 }

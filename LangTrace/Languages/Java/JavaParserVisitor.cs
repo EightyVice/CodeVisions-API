@@ -8,13 +8,15 @@ using Antlr4.Runtime.Misc;
 
 namespace LangTrace.Languages.Java
 {
-	internal class ParserVisitor : JavaBaseVisitor<IAtom>
+	internal class JavaParserVisitor : JavaBaseVisitor<IAtom>
 	{
-		public JavaInterpreter VM { get; }
+		private Environment environment = new Environment();
 
-		public ParserVisitor(JavaInterpreter vm)
+		InterpreterResult _result;
+
+		public JavaParserVisitor(InterpreterResult result)
 		{
-			VM = vm;
+			_result = result;
 		}
 
 		#region Helpers
@@ -148,7 +150,7 @@ namespace LangTrace.Languages.Java
 				else
 				{
 					if (memType != name)
-						VM.Environment.GetStructure(memType);
+						environment.GetStructure(memType);
 
 					kind.IsReference = true;
 					kind.ClassName = memType;
@@ -159,8 +161,8 @@ namespace LangTrace.Languages.Java
 
 			}
 
-			VM.Environment.DefineClass(new Class(name, members));
-			VM.Steps.Add(step);
+			environment.DefineClass(new Class(name, members));
+			_result.Steps.Add(step);
 			return null;
 		}
 
@@ -169,7 +171,7 @@ namespace LangTrace.Languages.Java
 			Step step = null;
 			string structName = context.identifier().GetText();
 
-			if (VM.Environment.GetStructure(structName) != null)
+			if (environment.GetStructure(structName) != null)
 			{
 				foreach (var declarator in context.declarators().declarator())
 				{
@@ -209,8 +211,8 @@ namespace LangTrace.Languages.Java
 					};
 					
 					Reference reference = new Reference(name, rec);
-					VM.Environment.DefineVariable(reference);
-					VM.Steps.Add(step);
+					environment.DefineVariable(reference);
+					_result.Steps.Add(step);
 				}
 			}
 
@@ -221,8 +223,8 @@ namespace LangTrace.Languages.Java
 		public override IAtom VisitExprConstructor([NotNull] JavaParser.ExprConstructorContext context)
 		{
 			string className = context.identifier().GetText();
-			Class classDef = VM.Environment.GetStructure(className);
-			return VM.Environment.InitObject(classDef);
+			Class classDef = environment.GetStructure(className);
+			return environment.InitObject(classDef);
 		}
 
 		public override IAtom VisitDeclPrimitiveVar([NotNull] JavaParser.DeclPrimitiveVarContext context)
@@ -291,8 +293,8 @@ namespace LangTrace.Languages.Java
 					};
 				}
 
-				VM.Environment.DefineVariable(primitive);
-				VM.Steps.Add(step);
+				environment.DefineVariable(primitive);
+				_result.Steps.Add(step);
 			}
 
 			return null;
@@ -331,6 +333,7 @@ namespace LangTrace.Languages.Java
 			{
 				Visit(context.statement());				
 			}
+			_result.Metadata.LoopsUsed = true;
 			return null;
 		}
 		
@@ -406,7 +409,7 @@ namespace LangTrace.Languages.Java
 				Result = condition
 			};
 
-			VM.Steps.Add(step);
+			_result.Steps.Add(step);
 			return null;
 		}
 
@@ -494,7 +497,7 @@ namespace LangTrace.Languages.Java
 							};
 
 
-							VM.Steps.Add(step);
+							_result.Steps.Add(step);
 							return right;
 						}
 						else
@@ -542,7 +545,7 @@ namespace LangTrace.Languages.Java
 						};
 
 
-						VM.Steps.Add(step);
+						_result.Steps.Add(step);
 						return rhs;
 
 					}
@@ -615,7 +618,7 @@ namespace LangTrace.Languages.Java
 				if (arity == 0)
 					throw new CompileErrorException("Can't create list with zero elements");
 		
-				Reference head = VM.Environment.InitObject(VM.Environment.NodeClass);		// Node head = new Node();
+				Reference head = environment.InitObject(environment.NodeClass);		// Node head = new Node();
 				Reference curr = head;      // curr = head;
 				var arguments = context.expressionList().expression();
 				List<string> items = new List<string>();
@@ -639,18 +642,18 @@ namespace LangTrace.Languages.Java
 							continue;
 						}
 
-						Reference n = VM.Environment.InitObject(VM.Environment.NodeClass);					// Node n = new Node();
+						Reference n = environment.InitObject(environment.NodeClass);					// Node n = new Node();
 						n.Object.Members["data"] = new Variable("<node.data>", DataType.Int, arg);          // n.data = arg;
 						curr.Object.Members["next"] = n;                                                    // curr.next = n;
 						curr = n;                                                                           // curr = n;
 					}
 				}
 				_step.Event.Data = items;
-				VM.Steps.Add(_step);
+				_result.Steps.Add(_step);
 				return head;																				// head
 			}
 
-			VM.Metadata.CallFunction(funcName);
+			_result.Metadata.CallFunction(funcName);
 
 			Step step = new Step();
 			step.GetFromParsingContext(context);
@@ -659,10 +662,10 @@ namespace LangTrace.Languages.Java
 			step.Event.Data = new
 			{
 				Name = funcName,
-				CallsCount = VM.Metadata.FunctionsCalls[funcName]
+				CallsCount = _result.Metadata.FunctionsCalls[funcName]
 			};
 
-			VM.Steps.Add(step);
+			_result.Steps.Add(step);
 			return null;
 
 		}
@@ -672,7 +675,7 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitPrimaryIdentifier([NotNull] JavaParser.PrimaryIdentifierContext context)
 		{
-			return VM.Environment.GetLValue(context.identifier().GetText());
+			return environment.GetLValue(context.identifier().GetText());
 		}
 
 #endregion

@@ -7,12 +7,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="CDL.g" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="CDL.g" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="obj\Debug\net6.0\CDLBaseListener.cs" />
+    <Compile Include="obj\Debug\net6.0\CDLBaseVisitor.cs" />
+    <Compile Include="obj\Debug\net6.0\CDLLexer.cs" />
+    <Compile Include="obj\Debug\net6.0\CDLListener.cs" />
+    <Compile Include="obj\Debug\net6.0\CDLParser.cs" />
+    <Compile Include="obj\Debug\net6.0\CDLVisitor.cs" />
     <Compile Include="obj\Debug\net6.0\JavaBaseListener.cs" />
     <Compile Include="obj\Debug\net6.0\JavaBaseVisitor.cs" />
     <Compile Include="obj\Debug\net6.0\JavaLexer.cs" />
     <Compile Include="obj\Debug\net6.0\JavaListener.cs" />
     <Compile Include="obj\Debug\net6.0\JavaParser.cs" />
     <Compile Include="obj\Debug\net6.0\JavaVisitor.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonBaseListener.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonBaseVisitor.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonLexer.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonListener.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonParser.cs" />
+    <Compile Include="obj\Debug\net6.0\PythonVisitor.cs" />
   </ItemGroup>
 
   <ItemGroup>

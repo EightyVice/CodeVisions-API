@@ -295,7 +295,8 @@ namespace LangTrace.Languages
 		}
 		public override IAtom VisitPrimaryIdentifier([NotNull] JavaParser.PrimaryIdentifierContext context)
 		{
-			return VM.Environment.GetLValue(context.identifier().GetText());
+			//return VM.Environment.GetLValue(context.identifier().GetText());
+			return null;
 		}
 
 		#endregion

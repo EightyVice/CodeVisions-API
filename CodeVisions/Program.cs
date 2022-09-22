@@ -1,21 +1,24 @@
 #define CODE_TEST
 
+// Un/comment for dis/enabling local testing and starting the host
 //#undef CODE_TEST
 
 
 #if CODE_TEST
 using System.Text.Json;
 using LangTrace;
+using LangTrace.Languages;
 using LangTrace.Languages.Java;
+using LangTrace.Languages.Python;
 
 var inputs = File.ReadAllText("testcode.txt").Split("@Test:");
 
-JavaInterpreter interpreter = new JavaInterpreter(inputs[0]);
-interpreter.Interpret();
+PythonInterpreter interpreter = new PythonInterpreter();
+var result = interpreter.Interpret(inputs[0], inputs[1]);
 if (interpreter.Status == InterpretationStatus.Success)
-	Console.WriteLine(JsonSerializer.Serialize(interpreter.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
+	Console.WriteLine(JsonSerializer.Serialize(result.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
 else if (interpreter.Status == InterpretationStatus.Failed)
-	Console.WriteLine(interpreter.Errors);
+	Console.WriteLine(result.Errors);
 else
 	Console.WriteLine("OMG somoething wrong");
 return;

@@ -15,7 +15,7 @@ namespace CodeVisions.Controllers
 		[HttpGet]
 		public IEnumerable<string> Get()
 		{
-			return new string[] { "C", "Java" };
+			return new string[] { "python", "java" };
 		}
 
 		// GET api/<CodeController>/5
@@ -29,36 +29,60 @@ namespace CodeVisions.Controllers
 		[HttpPost]
 		public object Post([FromBody] Models.CodeRequest request)
 		{
-			Models.CodeResponse response = new Models.CodeResponse(); 
+			Models.CodeResponse response = new Models.CodeResponse();
 
-			if(request.Language.ToLower() == "java")
+			Interpreter interpreter = null;
+			if (request.Language.ToLower() == "java")	
+				interpreter = new JavaInterpreter();
+
+			var result = interpreter.Interpret(request.Code, request.TestCode);
+
+			if(interpreter.Status == InterpretationStatus.Success)
 			{
-				JavaInterpreter interpreter = new JavaInterpreter(request.Code, request.TestCode);
-				interpreter.Interpret();
+				response.HasErrors = false;
+				response.Steps = result.Steps;
 
+				response.TestLogs = result.TesterResult.Logs;
+				response.CaseResults = result.TesterResult.CaseResults;
 
-				if(interpreter.Status == InterpretationStatus.Success)
-				{
-					response.HasErrors = false;
-					response.Steps = interpreter.Steps;
-
-					if (interpreter.TesterResult)
-						response.TestSuccess = true;
-					else
-						response.TestSuccess = false;
-
-				}
-				else if(interpreter.Status == InterpretationStatus.Failed)
-				{
-					response.HasErrors = true;
-					response.Errors = interpreter.Errors;
-					response.TestSuccess = false;
-				}
-				else
-				{
-					return null;
-				}
 			}
+			else
+			{
+				response.HasErrors = true;
+				response.Errors = result.Errors;
+			}
+
+
+
+
+			//if(request.Language.ToLower() == "java")
+			//{
+			//	JavaInterpreter interpreter = new JavaInterpreter(request.Code, request.TestCode);
+			//	interpreter.Interpret();
+
+
+			//	if(interpreter.Status == InterpretationStatus.Success)
+			//	{
+			//		response.HasErrors = false;
+			//		response.Steps = interpreter.Steps;
+
+			//		if (interpreter.TesterResult)
+			//			response.TestSuccess = true;
+			//		else
+			//			response.TestSuccess = false;
+
+			//	}
+			//	else if(interpreter.Status == InterpretationStatus.Failed)
+			//	{
+			//		response.HasErrors = true;
+			//		response.Errors = interpreter.Errors;
+			//		response.TestSuccess = false;
+			//	}
+			//	else
+			//	{
+			//		return null;
+			//	}
+			//}
 			return response;
 		}
 

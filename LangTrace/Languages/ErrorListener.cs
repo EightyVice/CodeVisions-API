@@ -11,15 +11,14 @@ namespace LangTrace.Languages.Java
 {
 	internal class ErrorListener : BaseErrorListener
 	{
-		private JavaInterpreter _interpreter;
+		private InterpreterResult _interpreter;
 
 		public override void SyntaxError([NotNull] IRecognizer recognizer, [Nullable] IToken offendingSymbol, int line, int charPositionInLine, [NotNull] string msg, [Nullable] RecognitionException e)
 		{
-			_interpreter.Status = InterpretationStatus.Failed;
-			_interpreter.Errors += $"line: {line} @ {charPositionInLine} [{offendingSymbol.Text}]: {msg}\n";
+			_interpreter.Errors.Add($"line: {line} @ {charPositionInLine} [{offendingSymbol.Text}]: {msg}\n");
 		}
 
-		public ErrorListener(JavaInterpreter interpreter)
+		public ErrorListener(InterpreterResult interpreter)
 		{
 			_interpreter = interpreter;
 		}

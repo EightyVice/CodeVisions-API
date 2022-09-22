@@ -17,11 +17,6 @@ init
 declaration
     : primitive             #DeclPrimitive
     | classDec                 #DeclClass
-    | linkedList            #DeclList
-    ;
-
-linkedList
-    : 'List' '<' type '>' identifier '=' arrayInit ';'
     ;
 
 primitive

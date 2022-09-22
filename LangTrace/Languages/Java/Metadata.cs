@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LangTrace.Languages.Java
+namespace LangTrace.Languages
 {
-	internal class Metadata
+	public class Metadata
 	{
 		public Dictionary<string, int> FunctionsCalls = new Dictionary<string, int>();
 		private Dictionary<string, int> variableAccesses = new Dictionary<string, int>();
 		public int NumberOfStatementsExecuted { get; }
 
+		public bool LoopsUsed { get; set; }
 		public void CallFunction(string name)
 		{
 			if (FunctionsCalls.ContainsKey(name)) FunctionsCalls[name]++;
