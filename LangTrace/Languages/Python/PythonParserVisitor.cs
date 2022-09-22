@@ -29,6 +29,7 @@ namespace LangTrace.Languages.Python
 			else
 				environment.DefineVariable(new Variable(name, expr));
 
+			Console.WriteLine(expr.GetValue());
 			return null;
 		}
 
@@ -99,6 +100,12 @@ namespace LangTrace.Languages.Python
 		{
 			var lhs = Visit(context.expr(0));
 			var rhs = Visit(context.expr(1));
+
+			if(lhs is Variable)
+				lhs = ((Variable)lhs).Value;
+			
+			if(rhs is Variable)
+				rhs = ((Variable)rhs).Value;
 
 			string op = context.bop.Text;
 			if (op == "==")
