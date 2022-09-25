@@ -115,6 +115,7 @@ statement
     | 'do' statement 'while' exprpar ';'                    #StmtDoWhile
     | 'return' expression? ';'                              #StmtReturn
     | 'for' '(' forControl ')' statement                    #StmtFor
+    | '{' statement+ '}'                                    #StmtBlocks
     | statementExpression=expression ';'                    #StmtExpression
     | ';'                                                   #EmptyStatement
     ;

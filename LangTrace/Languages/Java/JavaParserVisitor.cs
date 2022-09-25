@@ -328,8 +328,7 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitStmtWhile([NotNull] JavaParser.StmtWhileContext context)
 		{
-			IAtom condition = Visit(context.exprpar().expression());
-			for (int i = 0; IsTruthy(condition) && i < 50; i++) // Limit while loops to 50 times
+			for (int i = 0; IsTruthy(Visit(context.exprpar().expression())) && i < 10; i++) // Limit while loops to 50 times
 			{
 				Visit(context.statement());				
 			}
@@ -482,6 +481,11 @@ namespace LangTrace.Languages.Java
 							Reference left = (Reference)lhs;
 							Reference right = (Reference)rhs;
 							Object oldObj = left.Object;
+
+							// accept nulls
+							if (right.Object == Object.NullObject)
+								left.Object = right.Object;
+
 							if (left.Object.ClassName == right.Object.ClassName)
 								left.Object = right.Object;
 							else
@@ -496,6 +500,7 @@ namespace LangTrace.Languages.Java
 								RhsName = rname
 							};
 
+							_result.Metadata.Assign(lname, rname);
 
 							_result.Steps.Add(step);
 							return right;
@@ -675,6 +680,7 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitPrimaryIdentifier([NotNull] JavaParser.PrimaryIdentifierContext context)
 		{
+			if(context.identifier().GetText() == "null") return new Reference("null", Object.NullObject);
 			return environment.GetLValue(context.identifier().GetText());
 		}
 

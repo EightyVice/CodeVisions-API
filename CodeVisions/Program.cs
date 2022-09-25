@@ -1,7 +1,7 @@
 #define CODE_TEST
 
 // Un/comment for dis/enabling local testing and starting the host
-//#undef CODE_TEST
+#undef CODE_TEST
 
 
 #if CODE_TEST
@@ -13,7 +13,7 @@ using LangTrace.Languages.Python;
 
 var inputs = File.ReadAllText("testcode.txt").Split("@Test:");
 
-PythonInterpreter interpreter = new PythonInterpreter();
+Interpreter interpreter = new JavaInterpreter();
 var result = interpreter.Interpret(inputs[0], inputs[1]);
 if (interpreter.Status == InterpretationStatus.Success)
 	Console.WriteLine(JsonSerializer.Serialize(result.Steps, new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));

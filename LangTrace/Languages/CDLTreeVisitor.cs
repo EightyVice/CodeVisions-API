@@ -43,6 +43,30 @@ namespace LangTrace.Languages.CDL
 						return new NumberLiteral(count);
 					}
 				}},
+				{ "lastassign", new Callable(){
+					Name = "lastassign",
+					Arity = 2,
+					Parameters = {("lhs", typeof(StringLiteral)), ("rhs", typeof(StringLiteral))},
+					Body = (args) => {
+						string lhs = ((StringLiteral)args[0]).Value;
+						string rhs = ((StringLiteral)args[1]).Value;
+						bool result = false;
+						if(_interpreterResult.Metadata.Assignments[lhs].Peek() == rhs)
+							result = true;
+						QueryLog($"last assignment of \"{lhs}\" was \"{rhs}\"");
+						return new BooleanLiteral(result);
+					}
+				}},
+				{ "obj", new Callable(){
+					Name = "obj",
+					Arity = 1,
+					Parameters = {("objectId", typeof(NumberLiteral))},
+					Body = (args) => {
+
+						//QueryLog($"last assignment of \"{lhs}\" was \"{rhs}\"");
+						return new BooleanLiteral(false);
+					}
+				}},
 				{ "typeof", new Callable(){
 					Name = "typeof",
 					Arity = 1,

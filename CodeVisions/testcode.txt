@@ -1,7 +1,11 @@
-﻿a = 3
-if a != 3:
-	a = 4
-else
-	a = 5
+﻿Node p = CreateList(1,2,3,4,5,6,7);
+Node q = p;
+
+while(q != null){
+	q = q.next;
+}
 
 @Test:
+case 1
+? "Shater"
+: "7omar"

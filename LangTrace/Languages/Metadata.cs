@@ -12,6 +12,8 @@ namespace LangTrace.Languages
 		private Dictionary<string, int> variableAccesses = new Dictionary<string, int>();
 		public int NumberOfStatementsExecuted { get; }
 
+		public Dictionary<string, Stack<string>> Assignments = new Dictionary<string, Stack<string>>();
+
 		public bool LoopsUsed { get; set; }
 		public void CallFunction(string name)
 		{
@@ -23,6 +25,13 @@ namespace LangTrace.Languages
 		{
 			if (variableAccesses.ContainsKey(name)) variableAccesses[name]++;
 			else variableAccesses[name] = 1;
+		}
+
+		public void Assign(string lhs, string rhs)
+		{
+			if(Assignments.ContainsKey(lhs))
+				Assignments[lhs].Push(rhs);
+			else { Assignments[lhs] = new Stack<string>(); Assignments[lhs].Push(rhs);}
 		}
 	}
 }

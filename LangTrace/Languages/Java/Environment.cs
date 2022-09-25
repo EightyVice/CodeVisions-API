@@ -6,6 +6,10 @@
 		private Dictionary<string, Class> classes = new Dictionary<string, Class>();
 		private List<Object> objects = new List<Object>();
 
+		public Environment()
+		{
+			InitBuiltIns();
+		}
 		public void DefineClass(Class structure)
 		{
 			if (classes.ContainsKey(structure.Name))
@@ -92,6 +96,7 @@
 		public Reference InitObject(Class Class)
 		{
 			Object obj = new Object();
+			obj.ClassName = Class.Name;
 			Reference reference = new Reference(Class.Name, obj);
 			reference.Name = "<unnamed>";
 

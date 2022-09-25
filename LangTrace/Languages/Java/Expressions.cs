@@ -83,16 +83,7 @@ namespace LangTrace.Languages.Java
 
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
-			sb.AppendLine($"@{ClassName} {id}");
-			foreach(var member in Members)
-			{
-				if (member.Value is Variable)
-					sb.AppendLine(member.Key + ": " + ((Literal)((Variable)member.Value).Value).GetLiteral().ToString());
-				if (member.Value is Reference)
-					sb.AppendLine(member.Key + ": " + ((Reference)member.Value).Object.ToString());
-			}
-			return sb.ToString();
+			return $"[{ClassName}#{id}]";
 		}
 	}
 

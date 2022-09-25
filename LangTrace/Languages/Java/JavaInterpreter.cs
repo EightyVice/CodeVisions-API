@@ -32,12 +32,14 @@ namespace LangTrace.Languages.Java
 			}
 			catch (CompileErrorException ex)
 			{
+				Console.WriteLine(ex.Message);
+
 				Status = InterpretationStatus.Failed;
 				result.Errors.Add(ex.Message);
 			}
 
 			Tester = new Tester();
-
+			
 			if(testCode != null) 
 			{ 
 				var testResults = Tester.Validate(testCode, result);
