@@ -67,6 +67,33 @@ namespace LangTrace.Languages.CDL
 						return new BooleanLiteral(false);
 					}
 				}},
+				{ "isclassdefined", new Callable(){
+					Name = "isclassdefined",
+					Arity = 1,
+					Parameters = {("classname", typeof(StringLiteral))},
+					Body = (args) => {
+						return new BooleanLiteral(_interpreterResult.Metadata.Classes.ContainsKey(((StringLiteral)args[0]).Value));
+					}
+				}},
+				{ "classhas", new Callable(){
+					Name = "isclassdefined",
+					Arity = 2,
+					Parameters = {("classname", typeof(StringLiteral))},
+					Body = (args) => {
+						if (_interpreterResult.Metadata.Classes.ContainsKey(((StringLiteral)args[0]).Value))
+						{
+							foreach(var member in _interpreterResult.Metadata.Classes[((StringLiteral)args[0]).Value])
+							{
+								if(member.Item1 == ((StringLiteral)args[1]).Value.ToString())
+									return new BooleanLiteral(true);
+								else
+									continue;
+
+							}
+						}
+						return new BooleanLiteral(false);
+					}
+				}},
 				{ "typeof", new Callable(){
 					Name = "typeof",
 					Arity = 1,
@@ -89,6 +116,7 @@ namespace LangTrace.Languages.CDL
 
 		public bool IsTruthy(object conditionExpr)
 		{
+		
 			if (conditionExpr is BooleanLiteral)
 				return ((BooleanLiteral)conditionExpr).Value;
 
@@ -215,6 +243,14 @@ namespace LangTrace.Languages.CDL
 
 			return null;
 		}
+		public override object VisitAndExpression([NotNull] CDLParser.AndExpressionContext context)
+		{
+			return new BooleanLiteral(IsTruthy(Visit(context.expression(0))) && IsTruthy(Visit(context.expression(1))));
+		}
+		public override object VisitOrExpression([NotNull] CDLParser.OrExpressionContext context)
+		{
+			return new BooleanLiteral(IsTruthy(Visit(context.expression(0))) || IsTruthy(Visit(context.expression(1))));
+		}
 		public override object VisitFunctionExpression([NotNull] CDLParser.FunctionExpressionContext context)
 		{
 			string funcName = context.identifier().GetText();
@@ -238,6 +274,17 @@ namespace LangTrace.Languages.CDL
 					throw new CompileErrorException("Different number of arguments");
 			}
 
+			return null;
+		}
+
+		public override object VisitIdentifierExpression([NotNull] CDLParser.IdentifierExpressionContext context)
+		{
+			switch (context.identifier().GetText())
+			{
+				case "loopsused":
+					return new BooleanLiteral(_interpreterResult.Metadata.LoopsUsed);
+					break;
+			}
 			return null;
 		}
 		#endregion

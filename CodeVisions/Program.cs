@@ -1,7 +1,7 @@
 #define CODE_TEST
 
 // Un/comment for dis/enabling local testing and starting the host
-#undef CODE_TEST
+//#undef CODE_TEST
 
 
 #if CODE_TEST

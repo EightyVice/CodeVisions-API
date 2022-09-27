@@ -19,7 +19,10 @@ namespace LangTrace.Languages
 		Branching,
 		CallFunction,
 		DeclareClass,
+
+		// Special Events
 		DeclareLinkedList,
+		SetLLNodeNext,
 	}
 	public class Event
 	{

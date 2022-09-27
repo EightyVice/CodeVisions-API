@@ -16,7 +16,7 @@ namespace LangTrace.Languages.Java
 		Unknown
 	}
 
-	internal class Kind
+	public class Kind
 	{
 		public DataType DataType { get; set; }
 		public bool IsPrimitive { get; set; }
@@ -98,9 +98,10 @@ namespace LangTrace.Languages.Java
 		public int ParentObject { get; set; } = -1;
 		public DataType Type => DataType.Pointer;
 
-		public Reference(string name, Object @object)
+		public Reference(string name, string type, Object @object)
 		{
 			Name = name;
+			TypeName = type;
 			Object = @object;
 		}
 

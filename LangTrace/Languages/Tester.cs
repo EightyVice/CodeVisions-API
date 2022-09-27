@@ -12,8 +12,8 @@ namespace LangTrace.Languages
 {
 	public class CaseResult
 	{
-		public readonly bool Success;
-		public readonly string Message;
+		public bool Success { get; private set; }
+		public  string Message { get; private set; }
 
 		public CaseResult(bool success, string message = null)
 		{

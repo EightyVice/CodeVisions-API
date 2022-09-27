@@ -10,6 +10,7 @@ namespace LangTrace.Languages
 	{
 		public Dictionary<string, int> FunctionsCalls = new Dictionary<string, int>();
 		private Dictionary<string, int> variableAccesses = new Dictionary<string, int>();
+		public Dictionary<string, List<(string, Java.Kind)>> Classes = new Dictionary<string, List<(string, Java.Kind)>>();
 		public int NumberOfStatementsExecuted { get; }
 
 		public Dictionary<string, Stack<string>> Assignments = new Dictionary<string, Stack<string>>();

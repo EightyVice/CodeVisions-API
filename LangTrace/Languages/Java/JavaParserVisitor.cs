@@ -14,6 +14,8 @@ namespace LangTrace.Languages.Java
 
 		InterpreterResult _result;
 
+		private List<string> attributes = null;
+
 		public JavaParserVisitor(InterpreterResult result)
 		{
 			_result = result;
@@ -106,12 +108,29 @@ namespace LangTrace.Languages.Java
 
 		#endregion
 
+		public override IAtom VisitUnit([NotNull] JavaParser.UnitContext context)
+		{
+			if(context.identifier().Length > 0)
+			{
+				attributes = new List<string>();
+
+				foreach (var attr in context.identifier())
+					attributes.Add(attr.GetText());
+
+			}
+			else
+			{
+				attributes = null;
+			}
+
+			return VisitChildren(context);
+		}
 		#region Declaration
 
 		public override IAtom VisitDeclClass([NotNull] JavaParser.DeclClassContext context)
 		{
 			Step step = new Step();
-			step.GetFromParsingContext(context);
+			step.GetFromParsingContext(context, attributes);
 			step.Event = new Event(EventType.DeclareClass);
 
 			// class name
@@ -119,10 +138,11 @@ namespace LangTrace.Languages.Java
 			step.Event.Data = new
 			{
 				Name = name,
-				Members = new List<string[]>()
+				Members = new List<dynamic>()
 			};
 
 			List<(string name, Kind type)> members = new List<(string name, Kind type)>();
+
 
 			foreach (var memberdecl in context.classDec().memberDecl())
 			{
@@ -157,11 +177,12 @@ namespace LangTrace.Languages.Java
 				}
 
 				members.Add((memName, kind));
-				step.Event.Data.Members.Add(new string[] {memType, memName});
+				step.Event.Data.Members.Add(new {Type = memType, Name = memName});
 
 			}
 
 			environment.DefineClass(new Class(name, members));
+			_result.Metadata.Classes.Add(name, members);
 			_result.Steps.Add(step);
 			return null;
 		}
@@ -182,7 +203,7 @@ namespace LangTrace.Languages.Java
 					Object rec = null;
 
 					step = new Step();
-					step.GetFromParsingContext(context);
+					step.GetFromParsingContext(context, attributes);
 					step.Event = new Event(EventType.InitReference);
 
 					string objid = null;
@@ -210,7 +231,7 @@ namespace LangTrace.Languages.Java
 						Init = objid
 					};
 					
-					Reference reference = new Reference(name, rec);
+					Reference reference = new Reference(name,structName, rec);
 					environment.DefineVariable(reference);
 					_result.Steps.Add(step);
 				}
@@ -230,7 +251,7 @@ namespace LangTrace.Languages.Java
 		public override IAtom VisitDeclPrimitiveVar([NotNull] JavaParser.DeclPrimitiveVarContext context)
 		{
 			Step step = new Step();
-			step.GetFromParsingContext(context);
+			step.GetFromParsingContext(context, attributes);
 
 			var typeName = context.type().GetText();
 			var _type = GetTypeFromString(typeName);
@@ -385,7 +406,7 @@ namespace LangTrace.Languages.Java
 		public override IAtom VisitStmtIf([NotNull] JavaParser.StmtIfContext context)
 		{
 			Step step = new Step();
-			step.GetFromParsingContext(context);
+			step.GetFromParsingContext(context, attributes);
 			step.Event = new Event(EventType.Branching);
 			string condtext = context.exprpar().expression().GetText(); // condition
 
@@ -473,7 +494,7 @@ namespace LangTrace.Languages.Java
 					if (lhs is Reference)
 					{
 						Step step = new Step();
-						step.GetFromParsingContext(context);
+						step.GetFromParsingContext(context, attributes);
 						step.Event = new Event(EventType.ReferenceChanged);
 
 						if (rhs is Reference)
@@ -482,23 +503,50 @@ namespace LangTrace.Languages.Java
 							Reference right = (Reference)rhs;
 							Object oldObj = left.Object;
 
+							/*
+							 * Annonated Cases
+							 */
+
+							
+
 							// accept nulls
 							if (right.Object == Object.NullObject)
 								left.Object = right.Object;
 
-							if (left.Object.ClassName == right.Object.ClassName)
+							if (left.TypeName == right.TypeName)
+							{
+								
+								// Hardoding Node.next 
+								if (left.TypeName == "Node" && left.Name == "next")
+								{
+									step.Event.EventID = EventType.SetLLNodeNext;
+									step.Event.Data = new
+									{
+										LhsName = lname,
+										OldToId = oldObj.id,
+										ToId = right.Object.id,
+										FromId = left.ParentObject,
+										RhsName = rname
+									};
+								}
+								else
+								{
+									step.Event.Data = new
+									{
+										LhsName = lname,
+										OldId = oldObj.id,
+										NewId = right.Object.id,
+										ParentObject = left.ParentObject,
+										RhsName = rname
+									};
+								}
+
 								left.Object = right.Object;
+							}
 							else
 								throw new CompileErrorException("Only can assign same reference types");
 
-							step.Event.Data = new
-							{
-								LhsName = lname,
-								OldId = oldObj.id,
-								NewId = right.Object.id,
-								ParentObject = left.ParentObject,
-								RhsName = rname
-							};
+
 
 							_result.Metadata.Assign(lname, rname);
 
@@ -511,7 +559,7 @@ namespace LangTrace.Languages.Java
 					if (lhs is Variable)
 					{
 						Step step = new Step();
-						step.GetFromParsingContext(context);
+						step.GetFromParsingContext(context, attributes);
 						step.Event = new Event(EventType.ValueChanged);
 
 						object oldVal = null, newVal = null;
@@ -537,7 +585,7 @@ namespace LangTrace.Languages.Java
 
 							if (rhs is FloatLiteral)
 								((Variable)lhs).Value = new IntLiteral((int)((FloatLiteral)rhs).Value);
-
+						
 							if (rhs is IntLiteral)
 								((Variable)lhs).Value = ((IntLiteral)rhs);
 						}
@@ -617,7 +665,7 @@ namespace LangTrace.Languages.Java
 			if(funcName == "CreateList")
 			{
 				Step _step = new Step();
-				_step.GetFromParsingContext(context);
+				_step.GetFromParsingContext(context, attributes);
 				_step.Event = new Event(EventType.DeclareLinkedList);
 
 				if (arity == 0)
@@ -647,7 +695,9 @@ namespace LangTrace.Languages.Java
 							continue;
 						}
 
-						Reference n = environment.InitObject(environment.NodeClass);					// Node n = new Node();
+						Reference n = environment.InitObject(environment.NodeClass);                    // Node n = new Node();
+						n.Name = "next";
+						n.TypeName = "Node";
 						n.Object.Members["data"] = new Variable("<node.data>", DataType.Int, arg);          // n.data = arg;
 						curr.Object.Members["next"] = n;                                                    // curr.next = n;
 						curr = n;                                                                           // curr = n;
@@ -661,7 +711,7 @@ namespace LangTrace.Languages.Java
 			_result.Metadata.CallFunction(funcName);
 
 			Step step = new Step();
-			step.GetFromParsingContext(context);
+			step.GetFromParsingContext(context, attributes);
 			step.Event = new Event(EventType.CallFunction);
 
 			step.Event.Data = new
@@ -680,7 +730,8 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitPrimaryIdentifier([NotNull] JavaParser.PrimaryIdentifierContext context)
 		{
-			if(context.identifier().GetText() == "null") return new Reference("null", Object.NullObject);
+			if(context.identifier().GetText() == "null") return new Reference("null", null, Object.NullObject);
+			
 			return environment.GetLValue(context.identifier().GetText());
 		}
 

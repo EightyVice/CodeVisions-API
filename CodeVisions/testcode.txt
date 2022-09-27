@@ -1,11 +1,9 @@
-﻿Node p = CreateList(1,2,3,4,5,6,7);
-Node q = p;
-
-while(q != null){
-	q = q.next;
+﻿int[] x = {1,2,3};
+while(1){
+	func();
 }
 
 @Test:
-case 1
-? "Shater"
-: "7omar"
+case loopsused
+? "Loops used"
+: "loops not used"

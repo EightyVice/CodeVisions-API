@@ -6,9 +6,14 @@
 grammar Java;
 
 prog
-    : init+
+    : unit+
     ;
 
+unit
+    : init+
+    | '%' identifier (',' identifier)* '{' init+ '}'
+    ;
+    
 init
     : statement
     | declaration

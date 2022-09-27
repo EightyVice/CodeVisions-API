@@ -25,18 +25,18 @@ namespace LangTrace.Languages.Java
 			if (Status == InterpretationStatus.Failed)
 				return null;
 
-			try
-			{
+			//try
+			//{
 				JavaParserVisitor visitor = new JavaParserVisitor(result);
 				tree.Accept(visitor);
-			}
-			catch (CompileErrorException ex)
-			{
-				Console.WriteLine(ex.Message);
+			//}
+			//catch (CompileErrorException ex)
+			//{
+				//Console.WriteLine(ex.Message);
 
-				Status = InterpretationStatus.Failed;
-				result.Errors.Add(ex.Message);
-			}
+				//Status = InterpretationStatus.Failed;
+				//result.Errors.Add(ex.Message);
+			//}
 
 			Tester = new Tester();
 			
@@ -50,7 +50,6 @@ namespace LangTrace.Languages.Java
 					Console.ForegroundColor = r.Success ? ConsoleColor.Green : ConsoleColor.Red;
 					Console.WriteLine($"[Case Reuslt] {(r.Success ? "Passed" : "Failed")}: {r.Message}");
 					Console.ResetColor();
-
 				}
 			}
 

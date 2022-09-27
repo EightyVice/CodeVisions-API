@@ -15,12 +15,14 @@ namespace LangTrace.Languages
 		public int Line { get; set; }
 		public Event Event { get; set; }
 
-		public void GetFromParsingContext(ParserRuleContext context)
+		public ICollection<string> Attributes { get; set; }
+		public void GetFromParsingContext(ParserRuleContext context, List<string> attributes)
 		{
 			Start = context.Start.StartIndex;
 			End = context.Stop.StopIndex;
 			Line = context.start.Line;
 			Text = context.GetText();
+			Attributes = attributes;
 		}
 	}
 }

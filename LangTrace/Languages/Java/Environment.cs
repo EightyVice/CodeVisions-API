@@ -97,8 +97,7 @@
 		{
 			Object obj = new Object();
 			obj.ClassName = Class.Name;
-			Reference reference = new Reference(Class.Name, obj);
-			reference.Name = "<unnamed>";
+			Reference reference = new Reference("<unnnamed>", Class.Name, obj);
 
 			foreach (var member in Class.Members)
 			{
@@ -112,7 +111,7 @@
 				}
 				else if (member.type.IsReference)
 				{
-					obj.Members.Add(member.name, new Reference(member.name, Object.NullObject) { ParentObject = objects.Count});
+					obj.Members.Add(member.name, new Reference(member.name, Class.Name, Object.NullObject) { ParentObject = objects.Count});
 				}
 				else
 					throw new CompileErrorException("something wrong");
