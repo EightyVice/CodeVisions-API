@@ -51,8 +51,13 @@ namespace LangTrace.Languages.CDL
 						string lhs = ((StringLiteral)args[0]).Value;
 						string rhs = ((StringLiteral)args[1]).Value;
 						bool result = false;
-						if(_interpreterResult.Metadata.Assignments[lhs].Peek() == rhs)
-							result = true;
+						if (_interpreterResult.Metadata.Assignments.ContainsKey(lhs))
+						{
+							if(_interpreterResult.Metadata.Assignments[lhs].Peek() == rhs)
+								result = true;
+							else result = false;
+						}else result = false;
+
 						QueryLog($"last assignment of \"{lhs}\" was \"{rhs}\"");
 						return new BooleanLiteral(result);
 					}
@@ -205,11 +210,24 @@ namespace LangTrace.Languages.CDL
 			{
 				if (lhs is NumberLiteral && rhs is NumberLiteral)
 					return ((NumberLiteral)lhs) == ((NumberLiteral)rhs);
+
+				if (lhs is BooleanLiteral && rhs is BooleanLiteral)
+					return ((BooleanLiteral)lhs) == ((BooleanLiteral)rhs);
+
+				if (lhs is StringLiteral && rhs is StringLiteral)
+					return ((StringLiteral)lhs) == ((StringLiteral)rhs);
+
 			}
 			else if (op == "!=")
 			{
 				if (lhs is NumberLiteral && rhs is NumberLiteral)
 					return ((NumberLiteral)lhs) != (NumberLiteral)rhs;
+
+				if (lhs is BooleanLiteral && rhs is BooleanLiteral)
+					return ((BooleanLiteral)lhs) != ((BooleanLiteral)rhs);
+
+				if (lhs is StringLiteral && rhs is StringLiteral)
+					return ((StringLiteral)lhs) != ((StringLiteral)rhs);
 			}
 
 			return null;
@@ -283,7 +301,13 @@ namespace LangTrace.Languages.CDL
 			{
 				case "loopsused":
 					return new BooleanLiteral(_interpreterResult.Metadata.LoopsUsed);
-					break;
+
+				case "false":
+					return new BooleanLiteral(false);
+
+				case "true":
+					return new BooleanLiteral(true);
+
 			}
 			return null;
 		}

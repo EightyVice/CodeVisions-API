@@ -65,30 +65,7 @@ namespace LangTrace.Languages.Java
 
 			return false;
 		}
-		private bool IsAssignableToType(DataType destination, IAtom source)
-		{
-			if (
-				destination == DataType.Int && source is IntLiteral ||
-				destination == DataType.Int && source is FloatLiteral ||
-				destination == DataType.Float && source is IntLiteral ||
-				destination == DataType.Float && source is FloatLiteral
-			) return true;
 
-			return false;
-		}
-		private bool IsKindLikeLiteral(Kind kind, IAtom literal)
-		{
-			if (kind.IsPrimitive)
-			{
-				if (literal is Variable)
-					literal = ((Variable)literal).Value;
-
-				if (literal is FloatLiteral) return true;
-				if (literal is IntLiteral) return true;
-				return false;
-			}
-			return true;
-		}
 		private DataType GetTypeFromString(string type)
 		{
 			switch (type)
@@ -405,9 +382,7 @@ namespace LangTrace.Languages.Java
 		}
 		public override IAtom VisitStmtIf([NotNull] JavaParser.StmtIfContext context)
 		{
-			Step step = new Step();
-			step.GetFromParsingContext(context, attributes);
-			step.Event = new Event(EventType.Branching);
+
 			string condtext = context.exprpar().expression().GetText(); // condition
 
 			IAtom conditionExpr = Visit(context.exprpar().expression());
@@ -423,12 +398,9 @@ namespace LangTrace.Languages.Java
 					Visit(context.statement(1));
 			}
 
-			step.Event.Data = new
-			{
-				Condition = condtext,
-				Result = condition
-			};
-
+			Step step = new Step();
+			step.GetFromParsingContext(context, attributes);
+			step.Event = Event.Branch(condtext, condition);
 			_result.Steps.Add(step);
 			return null;
 		}

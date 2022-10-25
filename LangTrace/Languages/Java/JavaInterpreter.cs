@@ -25,18 +25,17 @@ namespace LangTrace.Languages.Java
 			if (Status == InterpretationStatus.Failed)
 				return null;
 
-			//try
-			//{
+			try
+			{
 				JavaParserVisitor visitor = new JavaParserVisitor(result);
 				tree.Accept(visitor);
-			//}
-			//catch (CompileErrorException ex)
-			//{
-				//Console.WriteLine(ex.Message);
-
-				//Status = InterpretationStatus.Failed;
-				//result.Errors.Add(ex.Message);
-			//}
+			}
+			catch (CompileErrorException ex)
+			{
+				Console.WriteLine(ex.Message);
+				Status = InterpretationStatus.Failed;
+				result.Errors.Add(ex.Message);
+			}
 
 			Tester = new Tester();
 			

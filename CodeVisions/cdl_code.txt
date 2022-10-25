@@ -1,0 +1,3 @@
+﻿case loopsused
+? "Loops used"
+: "loops not used"

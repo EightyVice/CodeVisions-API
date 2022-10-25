@@ -46,6 +46,7 @@ namespace LangTrace.Languages
 
 			CDLTreeVisitor visitor = new CDLTreeVisitor(result, interpreterResult);
 			tree.Accept(visitor);
+			
 
 			return result;
 		}
