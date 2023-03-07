@@ -21,6 +21,7 @@ namespace LangTrace.VirtualMachine
             public Object CreateObject(ProgramFile.Class @class)
             {
                 Object obj = new Object(@class);
+                objects.Add(obj);
                 return obj;
             }
         }
@@ -32,7 +33,7 @@ namespace LangTrace.VirtualMachine
         private Heap ObjectsHeap { get; } = new Heap();
 
         private void Push(Value value) => OperandStack.Push(value);
-        private void Pop() => OperandStack.Pop();
+        private Value Pop() => OperandStack.Pop();
 
 
 		ProgramFile _program;
@@ -158,9 +159,29 @@ namespace LangTrace.VirtualMachine
 
                     case Opcode.NEW:
                         {
-                            int index = reader.ReadByte();
-                            Debug.Write($"({index})");
+                            int index = reader.ReadByte(); Debug.Write($"({index})");
                             Push(ObjectsHeap.CreateObject(_program.Classes[index]));
+                        }
+                        break;
+
+                    case Opcode.FLOAD:
+                        {
+                            int index = reader.ReadByte(); Debug.Write($"({index})");
+                            var obj = (Object)Pop();
+                            var field_name = _program.Strings[index];
+                            Debug.Write($" {index}:\"{field_name}\" ");
+                            Push(obj[field_name]);
+                        }
+                        break;
+
+                    case Opcode.FSTOR:
+                        {
+                            int index = reader.ReadByte(); Debug.Write($"({index})");
+                            var obj = (Object)Pop();
+                            var val = Pop();
+                            var field_name = _program.Strings[index];
+                            Debug.Write($" {index}:\"{field_name}\" ");
+                            obj[field_name] = val;
                         }
                         break;
                     // IO
@@ -177,6 +198,10 @@ namespace LangTrace.VirtualMachine
                         break;
                     case Opcode.SIG_LOOP:
                         break;
+                }
+                foreach(var s in OperandStack.Reverse())
+                {
+                    Debug.Write($"[{s}]");
                 }
                 Debug.WriteLine("");
             }

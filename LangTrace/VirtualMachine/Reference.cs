@@ -16,6 +16,7 @@ namespace LangTrace.VirtualMachine
 
         public Object(ProgramFile.Class @class)
         {
+            Class = @class;
             if(@class != null)
             {
                 foreach (var field in @class.Fields)
@@ -29,5 +30,12 @@ namespace LangTrace.VirtualMachine
             set => fields[FieldName] = value;
         }
 
+        public override string ToString()
+        {
+            string ret = $"{Class?.Name}{{";
+            foreach(var kv in fields)
+                ret += $"{kv.Key}: {kv.Value} ";
+            return ret + "}";
+        }
     }
 }

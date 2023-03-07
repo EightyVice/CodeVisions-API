@@ -77,7 +77,8 @@ namespace LangTrace.VirtualMachine
 
 		// References
 		NEW,
-		LOADF,
+		FLOAD,
+		FSTOR,
 
 		// IO
 		PRNT,
@@ -129,8 +130,9 @@ namespace LangTrace.VirtualMachine
 		public void CPUSH(byte index) { addByte(Opcode.CPUSH); addByte(index); }
 
 		public void NEW(byte index) { addByte(Opcode.NEW); addByte(index); }
-		public void LOADF(byte index) { addByte(Opcode.LOADF); addByte(index); }
-
+		public void FLOAD(byte index) { addByte(Opcode.FLOAD); addByte(index); }
+		public void FSTOR(byte index) { addByte(Opcode.FSTOR); addByte(index); }
+		
 		public void PRINT() => addByte(Opcode.PRNT);
 		public void CALL() => addByte(Opcode.CALL);
 		public void PIP() => addByte(Opcode.PIP);
@@ -140,6 +142,139 @@ namespace LangTrace.VirtualMachine
 			return _buffer.ToArray();
 		}
 
-		
-	}
+		public static void Disassemble(byte[] byteCode, TextWriter output)
+        {
+			BinaryReader reader = new BinaryReader(new MemoryStream(byteCode));
+
+			while (reader.BaseStream.Position < reader.BaseStream.Length)
+            {
+				Opcode opcode = (Opcode)reader.ReadByte();
+                output.Write($"{reader.BaseStream.Position:X4}: {opcode}\t");
+
+                switch (opcode)
+                {
+                    case Opcode.NOP:
+                        break;
+                    case Opcode.PUSHI:
+                        break;
+                    case Opcode.PUSHD:
+                        break;
+                    case Opcode.PUSHF:
+                        break;
+                    case Opcode.PUSHS:
+                        break;
+                    case Opcode.PUSHB:
+                        break;
+                    case Opcode.PUSHC:
+                        break;
+                    case Opcode.PNULL:
+                        break;
+                    case Opcode.PSHI0:
+                        break;
+                    case Opcode.PSHI1:
+                        break;
+                    case Opcode.PSHI2:
+                        break;
+                    case Opcode.PSHI3:
+                        break;
+                    case Opcode.PSHI4:
+                        break;
+                    case Opcode.PSHI5:
+                        break;
+                    case Opcode.PSHD0:
+                        break;
+                    case Opcode.PSHD1:
+                        break;
+                    case Opcode.PSHD2:
+                        break;
+                    case Opcode.PSHD3:
+                        break;
+                    case Opcode.PSHD4:
+                        break;
+                    case Opcode.PSHD5:
+                        break;
+                    case Opcode.PSHF0:
+                        break;
+                    case Opcode.PSHF1:
+                        break;
+                    case Opcode.PSHF2:
+                        break;
+                    case Opcode.PSHF3:
+                        break;
+                    case Opcode.PSHF4:
+                        break;
+                    case Opcode.PSHF5:
+                        break;
+                    case Opcode.PIP:
+                        break;
+                    case Opcode.PFF:
+                        break;
+                    case Opcode.CPUSH:
+                        break;
+                    case Opcode.POP:
+                        break;
+                    case Opcode.ADDI:
+                        break;
+                    case Opcode.SUBI:
+                        break;
+                    case Opcode.MULI:
+                        break;
+                    case Opcode.DIVI:
+                        break;
+                    case Opcode.MODI:
+                        break;
+                    case Opcode.EQUL:
+                        break;
+                    case Opcode.NEQU:
+                        break;
+                    case Opcode.LESS:
+                        break;
+                    case Opcode.LEQU:
+                        break;
+                    case Opcode.MORE:
+                        break;
+                    case Opcode.MEQU:
+                        break;
+                    case Opcode.JMP:
+                        break;
+                    case Opcode.JMPF:
+                        break;
+                    case Opcode.JEQZ:
+                        break;
+                    case Opcode.JNEZ:
+                        break;
+                    case Opcode.CALL:
+                        break;
+                    case Opcode.RET:
+                        break;
+                    case Opcode.STORE:
+                        break;
+                    case Opcode.LOAD:
+                        break;
+                    case Opcode.NEW:
+                        break;
+                    case Opcode.FLOAD:
+                        break;
+                    case Opcode.FSTOR:
+                        break;
+                    case Opcode.PRNT:
+                        break;
+                    case Opcode.READ:
+                        break;
+                    case Opcode.SIG_VARDEC:
+                        break;
+                    case Opcode.SIG_PRINT:
+                        break;
+                    case Opcode.SIG_IF:
+                        break;
+                    case Opcode.SIG_LOOP:
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+
+        }
+    }
 }

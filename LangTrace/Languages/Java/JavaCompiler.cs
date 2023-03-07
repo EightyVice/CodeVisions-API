@@ -72,29 +72,29 @@ namespace LangTrace.Languages.Java
                 }
             }
 
-			return new ProgramFile(classes.ToArray(), methods.ToArray(), _constants.ToArray());
+			return new ProgramFile(classes.ToArray(), methods.ToArray(), _constants.ToArray(), _roIDs.ToArray());
 		}
 
-		private int LocalID(string id)
+		private byte LocalID(string id)
 		{
 			if (!_localIDs.Contains(id))
 			{
 				_localIDs.Add(id);
-				return _localIDs.Count - 1;
+				return (byte)(_localIDs.Count - 1);
 			}
 			
-			return _localIDs.IndexOf(id);	
+			return (byte)_localIDs.IndexOf(id);	
 		}
 
-		private int StringsID(string id)
+		private byte StringsID(string id)
         {
             if (!_roIDs.Contains(id))
             {
 				_roIDs.Add(id);
-				return _roIDs.Count - 1;
+				return (byte)(_roIDs.Count - 1);
             }
 
-			return _roIDs.IndexOf(id);
+			return (byte)(_roIDs.IndexOf(id));
 		}
 
 		private byte[] CompileMethod(Method method)
@@ -273,10 +273,30 @@ namespace LangTrace.Languages.Java
 			Emit(assignmentExpr.Value);
 
 			// Left-Hand Side
-			byte lhs = (byte)LocalID(assignmentExpr.Lhs.Name);
-			_emitter.STORE(lhs);
+			if(assignmentExpr.Lhs is FieldAccess) // Is field
+            {
+				var fa = (FieldAccess)assignmentExpr.Lhs;
+
+				// Push Reference
+				Emit(fa.Reference);
+
+				// Push Field Name
+				_emitter.FSTOR(StringsID(fa.Field));
+            }
+            else // Is Local variable
+            {
+				_emitter.STORE(LocalID(((Identifier)assignmentExpr.Lhs).Name));
+            }
 		}
 
+		public void Visit(FieldAccess fieldAccess)
+        {
+			// Push Accessee
+			Emit(fieldAccess.Reference);
+
+			// Push Field
+			_emitter.FLOAD(StringsID(fieldAccess.Field));
+        }
         public void Visit(ConstructorCall ctorExpr)
         {
 			// Emit Arguments
@@ -289,15 +309,6 @@ namespace LangTrace.Languages.Java
 			// Push NEW $CLASS_ID
 			_emitter.NEW((byte)Array.FindIndex(_program.Classes, c => c.Name == ctorExpr.ClassName));
 
-        }
-
-		public void Visit(FieldAccess fieldExpr)
-        {
-			// Push object reference
-			Emit(fieldExpr.Reference);
-
-			// LOADF <s8: fieldNameID>
-			_emitter.LOADF((byte)StringsID(fieldExpr.Field));
         }
         #endregion
 

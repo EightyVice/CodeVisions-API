@@ -192,10 +192,10 @@ namespace LangTrace.Languages.Java
 	}
 	internal class Assignment : Expression
 	{
-		internal readonly Identifier Lhs;
+		internal readonly Expression Lhs;
 		internal readonly Expression Value;
 
-		public Assignment(Identifier lhs, Expression value)
+		public Assignment(Expression lhs, Expression value)
 		{
 			Lhs = lhs;
 			Value = value;

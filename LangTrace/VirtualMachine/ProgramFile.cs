@@ -11,12 +11,13 @@ namespace LangTrace.VirtualMachine
         public Class[] Classes { get; }
         public Function[] Functions { get; }
         public Value[] Constants { get; }
-
-        public ProgramFile(Class[] classes, Function[] functions, Value[] constants)
+        public string[] Strings { get; }
+        public ProgramFile(Class[] classes, Function[] functions, Value[] constants, string[] strings)
         {
             Classes = classes;
             Functions = functions;
             Constants = constants;
+            Strings = strings;
         }
 
         internal class Class

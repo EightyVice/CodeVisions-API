@@ -353,7 +353,7 @@ namespace LangTrace.Languages.Java
 			if (context.NULL_LITERAL() != null)
 				return Null.Reference;
 
-			return null;
+			return VisitChildren(context);
         }
         public override object VisitIdentifier([NotNull] JavaParser.IdentifierContext context)
 		{
@@ -362,7 +362,7 @@ namespace LangTrace.Languages.Java
 		public override object VisitAssignExpr([NotNull] JavaParser.AssignExprContext context)
 		{
 			
-			Identifier lhs = (Identifier)Visit(context.expression(0));
+			Expression lhs = (Expression)Visit(context.expression(0));
 			Expression rhs = (Expression)Visit(context.expression(1));
 
 			if (context.bop.Text == "=")
