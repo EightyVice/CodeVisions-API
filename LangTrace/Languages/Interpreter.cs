@@ -18,12 +18,10 @@ namespace LangTrace.Languages
 		public ICollection<Step> Steps { get; set; } = new List<Step>();
 		public ICollection<string> Errors { get; set; } = new List<string>();
 		public Metadata Metadata { get; set; } = new Metadata();
-		public TesterResult TesterResult { get; set; }
 	}
 
 	public abstract class Interpreter
 	{
-		public Tester Tester { get; set; }
 		public InterpretationStatus Status { get; set; }
 
 		public abstract InterpreterResult Interpret(string sourceCode, string testCode);

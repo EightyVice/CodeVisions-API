@@ -36,22 +36,6 @@ namespace LangTrace.Languages.Python
 				result.Errors.Add(ex.Message);
 			}
 
-			Tester = new Tester();
-
-			if (testCode != null)
-			{
-				var testResults = Tester.Validate(testCode, result);
-				result.TesterResult = testResults;
-
-				foreach (var r in testResults.CaseResults)
-				{
-					Console.ForegroundColor = r.Success ? ConsoleColor.Green : ConsoleColor.Red;
-					Console.WriteLine($"[Case Reuslt] {(r.Success ? "Passed" : "Failed")}: {r.Message}");
-					Console.ResetColor();
-
-				}
-			}
-
 			Status = InterpretationStatus.Success;
 			return result;
 		}

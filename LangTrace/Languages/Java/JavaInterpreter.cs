@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Antlr4.Runtime;
 
+using LangTrace.VirtualMachine;
+
 namespace LangTrace.Languages.Java
 {
 
 	public class JavaInterpreter : Interpreter
 	{
-		public override InterpreterResult Interpret(string sourceCode, string testCode = null)
+		public override InterpreterResult Interpret(string sourceCode, string entryPoint = null)
 		{
 			InterpreterResult result = new InterpreterResult();
 
@@ -20,15 +22,31 @@ namespace LangTrace.Languages.Java
 			CommonTokenStream token = new CommonTokenStream(lexer);
 			JavaParser parser = new JavaParser(token);
 			parser.AddErrorListener(new ErrorListener(result));
-			var tree = parser.prog();
+			
+			// Build Parse Tree
+			var parseTree = parser.compilationUnit();
 
 			if (Status == InterpretationStatus.Failed)
 				return null;
 
 			try
 			{
-				JavaParserVisitor visitor = new JavaParserVisitor(result);
-				tree.Accept(visitor);
+
+				// Build Abstract Syntax Tree
+				JavaParserVisitor ptreeVisitor = new JavaParserVisitor();
+				CompilationUnit ast = (CompilationUnit)parseTree.Accept(ptreeVisitor);
+
+				// Compile AST and Generate VM Code
+				JavaCompiler compiler = new JavaCompiler(ast);
+				var compiler_result = compiler.Compile();
+
+				// Execute machine Code
+				RoaaVM vm = new RoaaVM(compiler_result);
+				
+				Console.WriteLine("Running...\n");
+				vm.Call(entryPoint);
+
+
 			}
 			catch (CompileErrorException ex)
 			{
@@ -36,22 +54,6 @@ namespace LangTrace.Languages.Java
 				Status = InterpretationStatus.Failed;
 				result.Errors.Add(ex.Message);
 			}
-
-			Tester = new Tester();
-			
-			if(testCode != null) 
-			{ 
-				var testResults = Tester.Validate(testCode, result);
-				result.TesterResult = testResults;
-
-				foreach(var r in testResults.CaseResults)
-				{
-					Console.ForegroundColor = r.Success ? ConsoleColor.Green : ConsoleColor.Red;
-					Console.WriteLine($"[Case Reuslt] {(r.Success ? "Passed" : "Failed")}: {r.Message}");
-					Console.ResetColor();
-				}
-			}
-
 			Status = InterpretationStatus.Success;
 			return result;
 		}

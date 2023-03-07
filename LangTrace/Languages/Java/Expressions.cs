@@ -6,251 +6,221 @@ using System.Threading.Tasks;
 
 namespace LangTrace.Languages.Java
 {
-	public enum DataType
+	internal interface IExpressionVisitor
 	{
-		Int,
-		Float,
-		Pointer,
-		Reference,
-		Structure,
-		Unknown
+		void Visit(Integer integerExpr);
+		void Visit(Boolean booleanExpr);
+		void Visit(BinaryExpression binaryExpr);
+		void Visit(FunctionCall callExpr);
+		void Visit(Identifier idExpr);
+		void Visit(Assignment assignmentExpr);
+		void Visit(ConstructorCall ctorExpr);
+		void Visit(Null nullExpr);
+		void Visit(FieldAccess fieldAccessExpr);
+
+	}
+	internal abstract class Expression
+	{
+		public abstract void Accept(IExpressionVisitor visitor);
 	}
 
-	public class Kind
+	#region Operators
+	internal enum ArithmeticOperator
 	{
-		public DataType DataType { get; set; }
-		public bool IsPrimitive { get; set; }
-		public bool IsPointerToPrimitive { get; set; }
-		public bool IsArray { get; set; }
-		public bool IsStructure { get; set; }
-		public bool IsPointerToStructure { get; set; }
-		public string ClassName { get; set; }
-		public bool IsReference { get; set; }
-	}
-	internal class Variable : LValue
-	{
+		Plus,
+		Minus,
+		Asterisk,
+		Slash,
 
-		public Variable(string name, DataType type, IAtom value)
-		{
-			
-			Name = name;
-			Value = value;
-			Type = type;
-		}
-
-		public string Name { get; set; }
-		public IAtom Value { get; set; }
-		public DataType Type { get; private set; }
-		public int Address { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-		public bool IsAssignableTo(IAtom atom)
-		{
-			if (atom is Variable)
-				return true;
-			if (atom is FloatLiteral)
-				return true;
-			if (atom is IntLiteral)
-				return true;
-			return false;
-		}
-
-		public RValue ToRvalue()
-		{
-			return (RValue)Value;
-		}
+		Equal,
+		NotEqual,
+		Greater,
+		GreaterEqual,
+		Less,
+		LessEqual,
 	}
 
-	internal class Class
+	internal class BinaryExpression : Expression
 	{
-		public string Name { get; set; }
-	
-		public List<(string name, Kind type)> Members { get; } = new List<(string name, Kind type)>();
+		public readonly Expression Left;
+		public readonly Expression Right;
+		public readonly ArithmeticOperator Operator;
 
-		public Class(string name, List<(string name, Kind type)> members) {
-			Name = name;
-			Members = members;
+		public BinaryExpression(Expression left, Expression right, ArithmeticOperator @operator)
+		{
+			Left = left;
+			Right = right;
+			Operator = @operator;
+		}
+
+		public override void Accept(IExpressionVisitor visitor)
+		{
+			visitor.Visit(this);
 		}
 	}
 
-	internal class Object
+	#endregion
+	internal class Integer : Expression
 	{
-		public int id { get; set; }
-		public string ClassName { get; set; }
-
-		public Dictionary<string, LValue> Members = new Dictionary<string, LValue>();
-
-		public static readonly Object NullObject = new Object() {id = -1};
-
-		public override string ToString()
-		{
-			return $"[{ClassName}#{id}]";
-		}
-	}
-
-
-
-	internal class Reference : LValue, IAtom
-	{
-		public string Name { get; set; }
-		public string TypeName { get; set; }
-		public Object Object { get; set; }
-
-		public int ParentObject { get; set; } = -1;
-		public DataType Type => DataType.Pointer;
-
-		public Reference(string name, string type, Object @object)
-		{
-			Name = name;
-			TypeName = type;
-			Object = @object;
-		}
-
-		public RValue ToRvalue()
-		{
-			throw new NotImplementedException();
-		}
-
-		public bool IsAssignableTo(IAtom atom)
-		{
-			if (atom is Reference)
-			{
-				if (this.Object.ClassName == ((Reference)atom).Object.ClassName)
-					return true;
-				return false;
-			}
-
-			if(atom is Object)
-			{
-				if (this.Object.ClassName == ((Object)atom).ClassName)
-					return true;
-				return false;
-			}
-			return false;
-		}
-		public override bool Equals(object? obj)
-		{
-			if(obj is Reference)
-			{
-				return this.Object == ((Reference)obj).Object;
-			}
-			return false;
-		}
-	}
-
-	#region Literals
-
-
-	internal class StringLiteral : Literal, IAtom, RValue
-	{
-		public readonly string Value;
-		public StringLiteral(string value)
-		{
-			Value = value;
-		}
-
-		public static StringLiteral operator +(StringLiteral lhs, StringLiteral rhs) => new StringLiteral(lhs.Value + rhs.Value);
-
-		public override object GetLiteral()
-		{
-			return Value;
-		}
-	}
-	internal class FloatLiteral : Literal, IAtom, RValue
-	{
-		public readonly float Value;
-
-		public FloatLiteral(float value)
-		{
-			Value = value;
-		}
-
-		
-		
-		// float op float -> float
-		public static FloatLiteral operator+(FloatLiteral lhs, FloatLiteral rhs) =>  new FloatLiteral(lhs.Value + rhs.Value);
-		public static FloatLiteral operator-(FloatLiteral lhs, FloatLiteral rhs) =>  new FloatLiteral(lhs.Value - rhs.Value);
-		public static FloatLiteral operator*(FloatLiteral lhs, FloatLiteral rhs) =>  new FloatLiteral(lhs.Value * rhs.Value);
-		public static FloatLiteral operator/(FloatLiteral lhs, FloatLiteral rhs) =>  new FloatLiteral(lhs.Value / rhs.Value);
-
-		// float op int -> float
-		public static FloatLiteral operator +(FloatLiteral lhs, IntLiteral rhs) => new FloatLiteral(lhs.Value + rhs.Value);
-		public static FloatLiteral operator -(FloatLiteral lhs, IntLiteral rhs) => new FloatLiteral(lhs.Value - rhs.Value);
-		public static FloatLiteral operator *(FloatLiteral lhs, IntLiteral rhs) => new FloatLiteral(lhs.Value * rhs.Value);
-		public static FloatLiteral operator /(FloatLiteral lhs, IntLiteral rhs) => new FloatLiteral(lhs.Value / rhs.Value);
-
-		public override object GetLiteral()
-		{
-			return Value;
-		}
-	}
-
-
-
-	internal class IntLiteral : Literal, IAtom, RValue
-	{ 
 		public readonly int Value;
-		
-		public IntLiteral(int value)
-		{
-			Value = value;
-		}
+		public Integer(int value) => Value = value;
 
 
 		// int op int -> int
-		public static IntLiteral operator +(IntLiteral lhs, IntLiteral rhs) => new IntLiteral(lhs.Value + rhs.Value);
-		public static IntLiteral operator -(IntLiteral lhs, IntLiteral rhs) => new IntLiteral(lhs.Value - rhs.Value);
-		public static IntLiteral operator *(IntLiteral lhs, IntLiteral rhs) => new IntLiteral(lhs.Value * rhs.Value);
-		public static IntLiteral operator /(IntLiteral lhs, IntLiteral rhs) => new IntLiteral(lhs.Value / rhs.Value);
+		public static Integer operator +(Integer lhs, Integer rhs) => new Integer(lhs.Value + rhs.Value);
+		public static Integer operator -(Integer lhs, Integer rhs) => new Integer(lhs.Value - rhs.Value);
+		public static Integer operator *(Integer lhs, Integer rhs) => new Integer(lhs.Value * rhs.Value);
+		public static Integer operator /(Integer lhs, Integer rhs) => new Integer(lhs.Value / rhs.Value);
 
 		// int op float -> float
-		public static FloatLiteral operator +(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value + rhs.Value);
-		public static FloatLiteral operator -(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value - rhs.Value);
-		public static FloatLiteral operator *(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value * rhs.Value);
-		public static FloatLiteral operator /(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value / rhs.Value);
-
-		public override object GetLiteral()
-		{
-			return Value;
-		}
+		//public static FloatLiteral operator +(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value + rhs.Value);
+		//public static FloatLiteral operator -(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value - rhs.Value);
+		//public static FloatLiteral operator *(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value * rhs.Value);
+		//public static FloatLiteral operator /(IntLiteral lhs, FloatLiteral rhs) => new FloatLiteral(lhs.Value / rhs.Value);
 
 		public override bool Equals(object? obj)
 		{
-			if(obj is IntLiteral)
-				return this.Value == ((IntLiteral)obj).Value;
-
-			if (obj is FloatLiteral)
-				return this.Value == ((FloatLiteral)obj).Value;
+			if (obj is Integer)
+				return this.Value == ((Integer)obj).Value;
 
 			return false;
 		}
 
+		public override void Accept(IExpressionVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
 	}
 
-	internal class ArrayVariable : LValue
+	internal class Boolean : Expression
 	{
-		public string Name { get; set; }
-		public List<IAtom> Values { get; set; } = new List<IAtom>();
-		public DataType Type { get; set; }
-		public int Address { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+		public readonly bool Value;
+		public Boolean(bool value) => Value = value;
 
-		public ArrayVariable(string name, params IAtom[] values)
+		public override bool Equals(object? obj)
+		{
+			if (obj is Boolean)
+				return this.Value == ((Boolean)obj).Value;
+
+			return false;
+		}
+
+
+		public override void Accept(IExpressionVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+
+
+	}
+
+    internal class Null : Expression
+    {
+		private Null() { }
+
+		public static Null Reference = new Null();
+
+        public override void Accept(IExpressionVisitor visitor)
+        {
+			visitor.Visit(this);
+        }
+    }
+    internal class FunctionCall : Expression
+	{
+		public readonly string Name;
+		public readonly List<Expression> Arguments;
+
+		public FunctionCall(string name, List<Expression> arguments)
 		{
 			Name = name;
-			Values.AddRange(values);
+			Arguments = arguments;
 		}
 
-		public RValue ToRvalue()
+		public override void Accept(IExpressionVisitor visitor)
 		{
-			throw new NotImplementedException();
-		}
-
-		public bool IsAssignableTo(IAtom atom)
-		{
-			// THINK: Should we support assignment to arrays? for me, only at declaration
-			return false;
+			visitor.Visit(this);
 		}
 	}
 
 
-	#endregion
+	internal class ConstructorCall : Expression
+    {
+		public readonly string ClassName;
+		public readonly Expression[] Arguments;
+
+        public ConstructorCall(string className, Expression[] arguments)
+        {
+            ClassName = className;
+            Arguments = arguments;
+        }
+
+        public override void Accept(IExpressionVisitor visitor)
+        {
+			visitor.Visit(this);
+        }
+    }
+
+	internal class FieldAccess : Expression
+    {
+		public Expression Reference { get; }
+		public string Field { get; }
+
+        public FieldAccess(Expression reference, string field)
+        {
+            Reference = reference;
+            Field = field;
+        }
+
+        public override void Accept(IExpressionVisitor visitor)
+        {
+			visitor.Visit(this);
+        }
+    }
+	internal class Identifier : Expression
+	{
+		public readonly string Name;
+
+		public Identifier(string name)
+		{
+			Name = name;
+		}
+
+		public override void Accept(IExpressionVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+	internal class Assignment : Expression
+	{
+		internal readonly Identifier Lhs;
+		internal readonly Expression Value;
+
+		public Assignment(Identifier lhs, Expression value)
+		{
+			Lhs = lhs;
+			Value = value;
+		}
+
+		public override void Accept(IExpressionVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	internal class ObjectRef
+	{
+		public string ClassName { get; }
+
+		public static readonly ObjectRef NullObject = new ObjectRef("<null>");
+
+        public ObjectRef(string className)
+        {
+            ClassName = className;
+        }
+
+        public override string ToString()
+		{
+			return $"[{ClassName}]";
+		}
+	}
 }

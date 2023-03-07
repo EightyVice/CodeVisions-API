@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 
 namespace LangTrace.Languages.Java
 {
-	interface RValue : IAtom
+	interface RValue
 	{
 
 	}
-	interface  LValue : IAtom
+	interface  LValue
 	{
 		public string Name { get; }
 
 		public RValue ToRvalue();
-		public bool IsAssignableTo(IAtom atom);
 	}
 }
