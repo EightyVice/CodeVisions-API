@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using LangTrace.Utilities;
+
 namespace LangTrace.VirtualMachine
 {
 
@@ -84,13 +86,22 @@ namespace LangTrace.VirtualMachine
 		PRNT,
 		READ,
 
-		// Trace Signaler
-		SIG_VARDEC,
-		SIG_PRINT,
-		SIG_IF,
-		SIG_LOOP,
+        // Breakpoint
+        BRKPNT,
+
+		// Trace Signaler (IMPDP)
+		IMPDP,
 	}
 
+    // Trace Signaler Opcodes
+    internal enum TracerOpcode 
+    {
+        VARDEC,
+        PRINT,
+        STORE_VAR,
+        STORE_FIELD,
+        NEW_OBJ,
+    }
 	/// <summary>
 	/// A bytecode generator for RoaaVM
 	/// </summary>
@@ -100,6 +111,7 @@ namespace LangTrace.VirtualMachine
 
 		public int Length { get => _buffer.Count; }
 		void addByte(byte b) => _buffer.Add(b);
+        void addShort(short s) => _buffer.AddRange(BitConverter.GetBytes(s));
 		void addByte(Opcode opcode) => _buffer.Add((byte)opcode);
 		public void AddBytes(params byte[] bytes) => _buffer.AddRange(bytes);
 		byte[] getintBytes(int i) => BitConverter.GetBytes(i);
@@ -137,6 +149,23 @@ namespace LangTrace.VirtualMachine
 		public void CALL() => addByte(Opcode.CALL);
 		public void PIP() => addByte(Opcode.PIP);
 		public void RET() => addByte(Opcode.RET);
+
+        // Tracer
+        private void TRACE(TracerOpcode opcode, TokenPosition position)
+        {
+            addByte(Opcode.IMPDP);
+            addByte((byte)opcode); // Tracer Opcode
+            addShort((short)position.Line);
+            addShort((short)position.Start);
+            addShort((short)position.End);
+        }
+        public void TRACE_STORE_FIELD(TokenPosition position, byte objID, byte fieldStringID) { 
+            TRACE(TracerOpcode.STORE_FIELD, position);
+            addByte(objID);
+            addByte(fieldStringID);
+        }
+        public void TRACE_STORE_VAR(TokenPosition position) { }
+        public void TRACE_NEW(TokenPosition position, byte classID) { TRACE(TracerOpcode.NEW_OBJ, position); addByte(classID); }
 		public byte[] GetByteCode()
 		{
 			return _buffer.ToArray();
@@ -261,14 +290,7 @@ namespace LangTrace.VirtualMachine
                         break;
                     case Opcode.READ:
                         break;
-                    case Opcode.SIG_VARDEC:
-                        break;
-                    case Opcode.SIG_PRINT:
-                        break;
-                    case Opcode.SIG_IF:
-                        break;
-                    case Opcode.SIG_LOOP:
-                        break;
+
                     default:
                         break;
                 }

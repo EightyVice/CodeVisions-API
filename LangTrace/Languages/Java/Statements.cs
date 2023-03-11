@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using LangTrace.Utilities;
+
 namespace LangTrace.Languages.Java
 {
 
@@ -15,72 +17,86 @@ namespace LangTrace.Languages.Java
 		void Visit(WhileStatement whileStmt);
 
 	}
-	internal abstract class Statement
+
+	internal interface IStatement
 	{
-		public abstract void Accept(IStatementVisitor visitor);
+		public void Accept(IStatementVisitor visitor);
+		public TokenPosition Position { get; }
 	}
 
 	
-	internal class BlockStatement : Statement
+	internal class BlockStatement : IStatement
 	{
-		public readonly List<Statement> InnerStatements;
+		public readonly List<IStatement> InnerStatements;
+        public TokenPosition Position { get; }
 
-		public BlockStatement(List<Statement> innerStatements)
+		public BlockStatement(List<IStatement> innerStatements, TokenPosition position)
 		{
 			InnerStatements = innerStatements;
+			Position = position;
 		}
 
-		public override void Accept(IStatementVisitor visitor)
+
+        public void Accept(IStatementVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	internal class ExpressionStatement : Statement
+	internal class ExpressionStatement : IStatement
 	{
-		public readonly Expression expression;
+		public readonly IExpression expression;
 
-		public ExpressionStatement(Expression expression)
+		public ExpressionStatement(IExpression expression, TokenPosition position)
 		{
 			this.expression = expression;
+			Position = position;
 		}
 
-		public override void Accept(IStatementVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IStatementVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
-	internal class IfStatement : Statement
+	internal class IfStatement : IStatement
 	{
-		public readonly Expression Condition;
-		public readonly Statement ThenBranch;
-		public readonly Statement ElseBranch;
+		public readonly IExpression Condition;
+		public readonly IStatement ThenBranch;
+		public readonly IStatement ElseBranch;
 
-		public IfStatement(Expression condition, Statement thenBranch, Statement elseBranch)
+		public IfStatement(IExpression condition, IStatement thenBranch, IStatement elseBranch, TokenPosition position)
 		{
 			Condition = condition;
 			ThenBranch = thenBranch;
 			ElseBranch = elseBranch;
+			Position = position;
 		}
 
-		public override void Accept(IStatementVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IStatementVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	internal class WhileStatement : Statement
+	internal class WhileStatement : IStatement
 	{
-		public readonly Expression Condition;
-		public readonly Statement Body;
+		public readonly IExpression Condition;
+		public readonly IStatement Body;
 
-		public WhileStatement(Expression condition, Statement body)
-		{
-			Condition = condition;
-			Body = body;
-		}
+		public WhileStatement(IExpression condition, IStatement body, TokenPosition position)
+        {
+            Condition = condition;
+            Body = body;
+            Position = position;
+        }
 
-		public override void Accept(IStatementVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IStatementVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
@@ -91,9 +107,9 @@ namespace LangTrace.Languages.Java
 	internal class Definition 
 	{
 		public readonly Declaration Declaration;
-		public readonly Expression Initializer;
+		public readonly IExpression Initializer;
 
-		public Definition(Declaration declaration, Expression initializer)
+		public Definition(Declaration declaration, IExpression initializer)
 		{
 			Declaration = declaration;
 			Initializer = initializer;
@@ -105,9 +121,9 @@ namespace LangTrace.Languages.Java
 	{
 		public readonly string Name;
 		public readonly TypeDescriptor Type;
-		public readonly Expression InitialValue;
+		public readonly IExpression InitialValue;
 
-		public LocalVariable(string name, TypeDescriptor type, Expression initialValue)
+		public LocalVariable(string name, TypeDescriptor type, IExpression initialValue)
 		{
 			Name = name;
 			Type = type;

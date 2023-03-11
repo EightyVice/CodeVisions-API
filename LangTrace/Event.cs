@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace LangTrace.Languages
 {
+
 	public enum EventType
 	{
 		InitVariable,

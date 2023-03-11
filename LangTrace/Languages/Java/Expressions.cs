@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using LangTrace.Utilities;
+
 namespace LangTrace.Languages.Java
 {
 	internal interface IExpressionVisitor
@@ -19,9 +21,11 @@ namespace LangTrace.Languages.Java
 		void Visit(FieldAccess fieldAccessExpr);
 
 	}
-	internal abstract class Expression
+	internal interface IExpression
 	{
-		public abstract void Accept(IExpressionVisitor visitor);
+		public void Accept(IExpressionVisitor visitor);
+		public TokenPosition Position { get; }
+
 	}
 
 	#region Operators
@@ -40,30 +44,35 @@ namespace LangTrace.Languages.Java
 		LessEqual,
 	}
 
-	internal class BinaryExpression : Expression
+	internal class BinaryExpression : IExpression
 	{
-		public readonly Expression Left;
-		public readonly Expression Right;
+		public readonly IExpression Left;
+		public readonly IExpression Right;
 		public readonly ArithmeticOperator Operator;
 
-		public BinaryExpression(Expression left, Expression right, ArithmeticOperator @operator)
+		public BinaryExpression(IExpression left, IExpression right, ArithmeticOperator @operator)
 		{
 			Left = left;
 			Right = right;
 			Operator = @operator;
 		}
 
-		public override void Accept(IExpressionVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
 	#endregion
-	internal class Integer : Expression
+	internal class Integer : IExpression
 	{
 		public readonly int Value;
-		public Integer(int value) => Value = value;
+
+        public TokenPosition Position { get; }
+
+        public Integer(int value) => Value = value;
 
 
 		// int op int -> int
@@ -86,16 +95,19 @@ namespace LangTrace.Languages.Java
 			return false;
 		}
 
-		public override void Accept(IExpressionVisitor visitor)
+		public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
-	internal class Boolean : Expression
+	internal class Boolean : IExpression
 	{
 		public readonly bool Value;
-		public Boolean(bool value) => Value = value;
+
+        public TokenPosition Position { get; }
+
+        public Boolean(bool value) => Value = value;
 
 		public override bool Equals(object? obj)
 		{
@@ -106,7 +118,7 @@ namespace LangTrace.Languages.Java
 		}
 
 
-		public override void Accept(IExpressionVisitor visitor)
+		public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
@@ -114,69 +126,79 @@ namespace LangTrace.Languages.Java
 
 	}
 
-    internal class Null : Expression
+    internal class Null : IExpression
     {
 		private Null() { }
 
 		public static Null Reference = new Null();
 
-        public override void Accept(IExpressionVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
         {
 			visitor.Visit(this);
         }
     }
-    internal class FunctionCall : Expression
+    internal class FunctionCall : IExpression
 	{
 		public readonly string Name;
-		public readonly List<Expression> Arguments;
+		public readonly List<IExpression> Arguments;
 
-		public FunctionCall(string name, List<Expression> arguments)
+		public FunctionCall(string name, List<IExpression> arguments, TokenPosition position)
 		{
 			Name = name;
 			Arguments = arguments;
+			Position = position;
 		}
 
-		public override void Accept(IExpressionVisitor visitor)
+		public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
 
 
-	internal class ConstructorCall : Expression
+	internal class ConstructorCall : IExpression
     {
 		public readonly string ClassName;
-		public readonly Expression[] Arguments;
+		public readonly IExpression[] Arguments;
 
-        public ConstructorCall(string className, Expression[] arguments)
+        public ConstructorCall(string className, IExpression[] arguments, TokenPosition position)
         {
             ClassName = className;
             Arguments = arguments;
-        }
+			Position = position;
+		}
 
-        public override void Accept(IExpressionVisitor visitor)
+		public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
         {
 			visitor.Visit(this);
         }
     }
 
-	internal class FieldAccess : Expression
+	internal class FieldAccess : IExpression
     {
-		public Expression Reference { get; }
+		public IExpression Reference { get; }
 		public string Field { get; }
 
-        public FieldAccess(Expression reference, string field)
+        public TokenPosition Position { get; }
+
+        public FieldAccess(IExpression reference, string field)
         {
             Reference = reference;
             Field = field;
         }
 
-        public override void Accept(IExpressionVisitor visitor)
+        public void Accept(IExpressionVisitor visitor)
         {
 			visitor.Visit(this);
         }
     }
-	internal class Identifier : Expression
+	internal class Identifier : IExpression
 	{
 		public readonly string Name;
 
@@ -185,23 +207,27 @@ namespace LangTrace.Languages.Java
 			Name = name;
 		}
 
-		public override void Accept(IExpressionVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 	}
-	internal class Assignment : Expression
+	internal class Assignment : IExpression
 	{
-		internal readonly Expression Lhs;
-		internal readonly Expression Value;
+		internal readonly IExpression Lhs;
+		internal readonly IExpression Value;
 
-		public Assignment(Expression lhs, Expression value)
+		public Assignment(IExpression lhs, IExpression value)
 		{
 			Lhs = lhs;
 			Value = value;
 		}
 
-		public override void Accept(IExpressionVisitor visitor)
+        public TokenPosition Position { get; }
+
+        public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}

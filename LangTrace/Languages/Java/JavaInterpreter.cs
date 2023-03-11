@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 
 using LangTrace.VirtualMachine;
+using LangTrace.VirtualMachine.TraceGenerator;
 
 namespace LangTrace.Languages.Java
 {
@@ -41,11 +42,13 @@ namespace LangTrace.Languages.Java
 				var compiler_result = compiler.Compile();
 
 				// Execute machine Code
-				RoaaVM vm = new RoaaVM(compiler_result);
-				
+				JSONTraceWriter json_tracer = new JSONTraceWriter();
+				RoaaVM vm = new RoaaVM(compiler_result, json_tracer);
+
 				Console.WriteLine("Running...\n");
 				vm.Call(entryPoint);
 
+				Console.WriteLine(json_tracer.ToString());
 
 			}
 			catch (CompileErrorException ex)

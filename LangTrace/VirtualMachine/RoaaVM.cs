@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using LangTrace.Utilities;
+using LangTrace.VirtualMachine.TraceGenerator;
+
 namespace LangTrace.VirtualMachine
 {
 	internal class RoaaVM
@@ -37,10 +40,21 @@ namespace LangTrace.VirtualMachine
 
 
 		ProgramFile _program;
-		public RoaaVM(ProgramFile program)
+        ITraceWriter _tracer;
+
+		public RoaaVM(ProgramFile program, ITraceWriter traceWriter = null)
 		{
 			_program = program;
-			
+            _tracer = traceWriter;
+
+            // Generate tracer metadata
+
+            foreach (var cls in _program.Classes)
+                _tracer.DefineClass(cls.Name, cls.Fields.Select(f => f.Name).ToArray());
+
+            foreach(var method in _program.Functions)
+                _tracer.DefineFunction(method.Name, "todo", method.Locals.Select(f => f.Name).ToArray());
+            
 		}
 
 		public void Call(string functionName, params Value[] arguments)
@@ -77,10 +91,13 @@ namespace LangTrace.VirtualMachine
 			Debug.WriteLine("");
 		}
 		
+        
 		private void Execute(byte[] bytecode)
         {
 			BinaryReader reader = new BinaryReader(new MemoryStream(bytecode));
 			
+            // Local Helper:
+            TokenPosition GetPos() => new TokenPosition(reader.ReadInt16(), reader.ReadInt16(), reader.ReadInt16());
 			while(reader.BaseStream.Position < reader.BaseStream.Length)
             {
 				Opcode opcode = (Opcode)reader.ReadByte();
@@ -190,16 +207,33 @@ namespace LangTrace.VirtualMachine
                         break;
                     case Opcode.READ:
                         break;
-                    case Opcode.SIG_VARDEC:
-                        break;
-                    case Opcode.SIG_PRINT:
-                        break;
-                    case Opcode.SIG_IF:
-                        break;
-                    case Opcode.SIG_LOOP:
+
+
+                    case Opcode.IMPDP:
+                        {
+                            TracerOpcode tracer_opcode = (TracerOpcode)reader.ReadByte();
+                            switch (tracer_opcode)
+                            {
+                                case TracerOpcode.VARDEC:
+                                    break;
+                                case TracerOpcode.PRINT:
+                                    break;
+                                case TracerOpcode.IF:
+                                    break;
+                                case TracerOpcode.LOOP:
+                                    break;
+                                case TracerOpcode.NEW_OBJ: 
+                                    {
+                                        _tracer.NewObject(GetPos().Line, reader.ReadByte());
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                         break;
                 }
-                foreach(var s in OperandStack.Reverse())
+                foreach (var s in OperandStack.Reverse())
                 {
                     Debug.Write($"[{s}]");
                 }
@@ -207,5 +241,5 @@ namespace LangTrace.VirtualMachine
             }
         }
 
-	}
+    }
 }

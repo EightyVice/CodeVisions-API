@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using LangTrace.Utilities;
 
 namespace LangTrace.Languages.Java
 {
@@ -38,6 +39,7 @@ namespace LangTrace.Languages.Java
 			
 		}
 
+		TokenPosition GetPosition(Antlr4.Runtime.ParserRuleContext context) => new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex);
 		TypeDescriptor DescriptorFromTypeContext(JavaParser.TypeTypeContext type_ctx)
         {
 			TypeDescriptor desc = new TypeDescriptor();
@@ -86,10 +88,23 @@ namespace LangTrace.Languages.Java
 
 			string methodName = context.identifier().GetText();
 			var returnType = DescriptorFromTypeContext(context.typeTypeOrVoid());
-			List<Statement> bodyStmts = new List<Statement>();
+			List<IStatement> bodyStmts = new List<IStatement>();
 			List<LocalVariableDeclaration> locals = new List<LocalVariableDeclaration>();
 			List<Declaration> funcParameters = new List<Declaration>();
 
+
+			bool is_static = false;
+
+			Antlr4.Runtime.RuleContext class_decl = context;
+			while (class_decl is not JavaParser.ClassDeclarationContext)
+				class_decl = class_decl.Parent;
+
+			var class_name = ((JavaParser.ClassDeclarationContext)class_decl).identifier().GetText();
+
+
+			var class_body_decl = (JavaParser.ClassBodyDeclarationContext)context.Parent.Parent;
+			if ((bool)class_body_decl.modifier()?.Any(m => m.GetText() == "static"))
+				is_static = true;
 
 			// Parameters
 			if (context.formalParameters().formalParameterList() != null)
@@ -124,7 +139,7 @@ namespace LangTrace.Languages.Java
 									new Assignment(
 										new Identifier(v.Name),
 										v.InitialValue
-									)
+									), new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex)
 								)
 							);
 						}
@@ -132,12 +147,12 @@ namespace LangTrace.Languages.Java
 					else
 					{
 						object body_stmt = Visit(stmt.statement());
-						bodyStmts.Add((Statement)body_stmt);
+						bodyStmts.Add((IStatement)body_stmt);
 					}
 				}
 			}
 
-			return new Method(returnType, methodName, bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray());
+			return new Method(returnType, methodName, bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray(), is_static, class_name);
 		}
         public override Declaration[] VisitFieldDeclaration([NotNull] JavaParser.FieldDeclarationContext context)
         {
@@ -172,11 +187,11 @@ namespace LangTrace.Languages.Java
 			{
 				string decName = vardecl.variableDeclaratorId().GetText();
 
-				Expression init = null;
+				IExpression init = null;
 				// check initializer value
 				if(vardecl.variableInitializer() != null)
 				{
-					init = (Expression)Visit(vardecl.variableInitializer().expression());
+					init = (IExpression)Visit(vardecl.variableInitializer().expression());
 				}
 				localvars.Add(new LocalVariable(decName, decType, init));
 			}
@@ -188,7 +203,7 @@ namespace LangTrace.Languages.Java
         {
 			string methodName = context.identifier().GetText();
 			TypeDescriptor returnType = null;
-			var  bodyStmts = new List<Statement>();
+			var  bodyStmts = new List<IStatement>();
 			var locals = new List<LocalVariableDeclaration>();
 			var funcParameters = new List<Declaration>();
 
@@ -226,7 +241,7 @@ namespace LangTrace.Languages.Java
 									new Assignment(
 										new Identifier(v.Name),
 										v.InitialValue
-									)
+									), new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex)
 								)
 							);
 						}
@@ -234,12 +249,12 @@ namespace LangTrace.Languages.Java
 					else
 					{
 						object body_stmt = Visit(stmt.statement());
-						bodyStmts.Add((Statement)body_stmt);
+						bodyStmts.Add((IStatement)body_stmt);
 					}
 				}
 			}
 
-			return new Method(null, methodName, bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray());
+			return new Method(null, $"ctor:{methodName}", bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray(), false, methodName);
 		}
         public override Class VisitClassDeclaration([NotNull] JavaParser.ClassDeclarationContext context)
         {
@@ -248,12 +263,14 @@ namespace LangTrace.Languages.Java
 			var fields = new List<Declaration>();
 			foreach(var stmt_ctx in context.classBody().classBodyDeclaration())
             {
+				
 				var stmt = Visit(stmt_ctx);
 				// Field
 				if(stmt is Declaration[]) fields.AddRange((Declaration[])stmt);
 
 				// Method
-				if(stmt is Method) methods.Add((Method)stmt);
+				if (stmt is Method) methods.Add((Method)stmt);
+
             }
 
 			return new Class(name, fields.ToArray(), methods.ToArray());
@@ -263,26 +280,26 @@ namespace LangTrace.Languages.Java
 		#region Statements
 		public override object VisitExpressionStatement([NotNull] JavaParser.ExpressionStatementContext context)
 		{
-			return new ExpressionStatement((Expression)Visit(context.expression()));
+			return new ExpressionStatement((IExpression)Visit(context.expression()), new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex));
 		}
 
 		public override object VisitIfStatment([NotNull] JavaParser.IfStatmentContext context)
 		{
-			var condExpr = (Expression)Visit(context.parExpression().expression());
-			var true_stmt = (Statement)Visit(context.statement(0));
-			Statement else_stmt = null;
+			var condExpr = (IExpression)Visit(context.parExpression().expression());
+			var true_stmt = (IStatement)Visit(context.statement(0));
+			IStatement else_stmt = null;
 
-			if (context.ELSE() != null) else_stmt = (Statement)Visit(context.statement(1));
+			if (context.ELSE() != null) else_stmt = (IStatement)Visit(context.statement(1));
 
-			return new IfStatement(condExpr, true_stmt, else_stmt);
+			return new IfStatement(condExpr, true_stmt, else_stmt, new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex));
 		}
 
 		public override object VisitWhileStatement([NotNull] JavaParser.WhileStatementContext context)
 		{
-			var condExpr = (Expression)Visit(context.parExpression().expression());
-			var body = (Statement)Visit(context.statement());
+			var condExpr = (IExpression)Visit(context.parExpression().expression());
+			var body = (IStatement)Visit(context.statement());
 
-			return new WhileStatement(condExpr, body);
+			return new WhileStatement(condExpr, body, new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex));
 	
 		}
 		#endregion
@@ -295,8 +312,8 @@ namespace LangTrace.Languages.Java
 
 		public override object VisitTermExpr([NotNull] JavaParser.TermExprContext context)
 		{
-			Expression lhs = (Expression)Visit(context.expression(0));
-			Expression rhs = (Expression)Visit(context.expression(1));
+			IExpression lhs = (IExpression)Visit(context.expression(0));
+			IExpression rhs = (IExpression)Visit(context.expression(1));
 			string op = context.bop.Text;
 			if (op == "+")
 				return new BinaryExpression(lhs, rhs, ArithmeticOperator.Plus);
@@ -306,8 +323,8 @@ namespace LangTrace.Languages.Java
 
 		public override object VisitFactorExpr([NotNull] JavaParser.FactorExprContext context)
 		{
-			Expression lhs = (Expression)Visit(context.expression(0));
-			Expression rhs = (Expression)Visit(context.expression(1));
+			IExpression lhs = (IExpression)Visit(context.expression(0));
+			IExpression rhs = (IExpression)Visit(context.expression(1));
 			string op = context.bop.Text;
 			if (op == "*")
 				return new BinaryExpression(lhs, rhs, ArithmeticOperator.Asterisk);
@@ -317,8 +334,8 @@ namespace LangTrace.Languages.Java
 
 		public override object VisitCompareExpr([NotNull] JavaParser.CompareExprContext context)
 		{
-			Expression lhs = (Expression)Visit(context.expression(0));
-			Expression rhs = (Expression)Visit(context.expression(1));
+			IExpression lhs = (IExpression)Visit(context.expression(0));
+			IExpression rhs = (IExpression)Visit(context.expression(1));
 			string op = context.bop.Text;
 
 			switch (op)
@@ -330,18 +347,18 @@ namespace LangTrace.Languages.Java
 			}
 
 		}
-		public override Expression VisitMethodCall([NotNull] JavaParser.MethodCallContext context)
+		public override IExpression VisitMethodCall([NotNull] JavaParser.MethodCallContext context)
 		{
 			string name = context.identifier().GetText();
-			List<Expression> args = new List<Expression>();
+			List<IExpression> args = new List<IExpression>();
 
 			if(context.expressionList() != null) { 
-				foreach (var arg in context.expressionList().expression()) args.Add((Expression)Visit(arg));
+				foreach (var arg in context.expressionList().expression()) args.Add((IExpression)Visit(arg));
 			}
-			return new FunctionCall(name, args);
+			return new FunctionCall(name, args, GetPosition(context));
 
 		}
-		public override Expression VisitIntegerLiteral([NotNull] JavaParser.IntegerLiteralContext context)
+		public override IExpression VisitIntegerLiteral([NotNull] JavaParser.IntegerLiteralContext context)
 		{
 			return new Integer(int.Parse(context.GetText()));
 		}
@@ -362,8 +379,8 @@ namespace LangTrace.Languages.Java
 		public override object VisitAssignExpr([NotNull] JavaParser.AssignExprContext context)
 		{
 			
-			Expression lhs = (Expression)Visit(context.expression(0));
-			Expression rhs = (Expression)Visit(context.expression(1));
+			IExpression lhs = (IExpression)Visit(context.expression(0));
+			IExpression rhs = (IExpression)Visit(context.expression(1));
 
 			if (context.bop.Text == "=")
 				return new Assignment(lhs, rhs);
@@ -378,7 +395,10 @@ namespace LangTrace.Languages.Java
             {
 				var class_name = context.creator().createdName().identifier(0).GetText();
 				var ctor_ctx = context.creator().classCreatorRest();
-				return new ConstructorCall(class_name, ctor_ctx.arguments().expressionList()?.expression().Select(arg => (Expression)Visit(arg)).ToArray());
+				return new ConstructorCall(
+					class_name,
+					ctor_ctx.arguments().expressionList()?.expression().Select(arg => (IExpression)Visit(arg)).ToArray(),
+					GetPosition(context));
             }
 
 			// Array Constructor
@@ -392,7 +412,7 @@ namespace LangTrace.Languages.Java
         public override object VisitDotExpr([NotNull] JavaParser.DotExprContext context)
         {
 			if (context.identifier() != null) 
-				return new FieldAccess((Expression)Visit(context.expression()), context.identifier().GetText());
+				return new FieldAccess((IExpression)Visit(context.expression()), context.identifier().GetText());
 			return null;
         }
         #endregion

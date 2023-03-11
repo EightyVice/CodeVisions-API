@@ -39,17 +39,21 @@ namespace LangTrace.Languages.Java
 	{
 		public TypeDescriptor ReturnType { get;}
 		public string Name { get;}
-		public Statement[] Statements { get;}
+		public IStatement[] Statements { get;}
 		public Declaration[] Parameters { get;}
 		public LocalVariableDeclaration[] Locals { get;}
+		public bool IsStatic { get; set; }
+		public string ClassName { get; set; }
 
-        public Method(TypeDescriptor returnType, string name, Statement[] statements, Declaration[] parameters, LocalVariableDeclaration[] locals)
+        public Method(TypeDescriptor returnType, string name, IStatement[] statements, Declaration[] parameters, LocalVariableDeclaration[] locals, bool isStatic, string className)
         {
             ReturnType = returnType;
             Name = name;
             Statements = statements;
             Parameters = parameters;
             Locals = locals;
+            IsStatic = isStatic;
+            ClassName = className;
         }
     }
 

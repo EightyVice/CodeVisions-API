@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,6 +40,7 @@ namespace LangTrace.VirtualMachine
             public int Arity { get; }
             public (string Name, Descriptor Type)[] Locals { get; }
             public byte[] Bytecode { get; }
+
             public Function(string name, Descriptor returnType, int arity, (string Name, Descriptor Type)[] locals, byte[] bytecode)
             {
                 Name = name;

@@ -67,8 +67,26 @@ namespace LangTrace.Languages.Java
 					// Compile methods
 					var bytecode = CompileMethod(method);
 
+					// Parameters are considered locals in RVM
+					var parameters = method.Parameters;
+                    if (!method.IsStatic)
+                    {
+						var l = method.Parameters.ToList();
+						l.Insert(0, new Declaration(new TypeDescriptor() { IsReference = true, ClassName = method.ClassName }, "this"));
+						parameters = l.ToArray();
+					}
+
+					var locals = new List<(string Name, Descriptor Type)>();
+
+					foreach(var param in parameters) 
+						locals.Add((param.Name, null));
+
+					foreach(var local in method.Locals)
+						foreach(var l in local.Variables) locals.Add((l.Name, null)); 
+            
+
 					// Methods metadata
-					methods.Add(new ProgramFile.Function(method.Name, null, method.Parameters.Length, null, bytecode));
+					methods.Add(new ProgramFile.Function(method.Name, null, parameters.Length, locals.ToArray(), bytecode));
                 }
             }
 
@@ -164,12 +182,12 @@ namespace LangTrace.Languages.Java
 			Emit(exprStmt.expression);
 		}
 
-		void Emit(Expression expr) => expr.Accept(this);
+		void Emit(IExpression expr) => expr.Accept(this);
 	
 
-		void Emit(Statement stmt) => stmt.Accept(this);
+		void Emit(IStatement stmt) => stmt.Accept(this);
 
-		byte[] EmitNoAppend(Expression expr)
+		byte[] EmitNoAppend(IExpression expr)
 		{
 			var main_gen = _emitter;
 			_emitter = new ByteCodeGenerator();
@@ -180,7 +198,7 @@ namespace LangTrace.Languages.Java
 			_emitter = main_gen;
 			return bytes;
 		}
-		byte[] EmitNoAppend(Statement stmt)
+		byte[] EmitNoAppend(IStatement stmt)
 		{
 			var main_gen = _emitter;
 			_emitter = new ByteCodeGenerator();
@@ -244,7 +262,7 @@ namespace LangTrace.Languages.Java
 			if (callExpr.Name == "print")
 			{
 				// Emit arguments in REVERSE order
-				foreach (var arg in callExpr.Arguments.Reverse<Expression>())
+				foreach (var arg in callExpr.Arguments.Reverse<IExpression>())
 					Emit(arg);
 
 				_emitter.PRINT();
@@ -307,8 +325,11 @@ namespace LangTrace.Languages.Java
             }
 
 			// Push NEW $CLASS_ID
-			_emitter.NEW((byte)Array.FindIndex(_program.Classes, c => c.Name == ctorExpr.ClassName));
+			byte index = (byte)Array.FindIndex(_program.Classes, c => c.Name == ctorExpr.ClassName);
+			_emitter.NEW(index);
 
+			// Tracer Opcode
+			_emitter.TRACE_NEW(ctorExpr.Position, index);
         }
         #endregion
 

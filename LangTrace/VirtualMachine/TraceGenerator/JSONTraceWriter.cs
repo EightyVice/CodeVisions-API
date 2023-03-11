@@ -61,13 +61,14 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
 
-        public void DefineFunction(string name, string returnType, params string[] parameters)
+        public void DefineFunction(string name, string returnType, string[] locals, string tag = null)
         {
             functions.Add(new
             {
                 name = name,
                 returnType = returnType,
-                parameters = parameters
+                locals = locals,
+                tag = tag
             });
 
         }
@@ -85,7 +86,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 }
             });
         }
-
+        
         public override string ToString()
         {
             return JsonSerializer.Serialize(
@@ -124,6 +125,18 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 tag = tag
             });
         }
+
+        private void AddTrace(int line, string eventName, object eventData, string tag = null)
+        {
+            trace.Add(new
+            {
+                line = line,
+                @event = eventName,
+                event_data = eventData,
+                tag = tag
+            });
+        }
+        public void NewObject(int line, int objID, string tag = null) => AddTrace(line, "new_object", new { objectID = objID }, tag);
     }
 
 }
