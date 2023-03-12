@@ -218,10 +218,6 @@ namespace LangTrace.VirtualMachine
                                     break;
                                 case TracerOpcode.PRINT:
                                     break;
-                                case TracerOpcode.IF:
-                                    break;
-                                case TracerOpcode.LOOP:
-                                    break;
                                 case TracerOpcode.NEW_OBJ: 
                                     {
                                         _tracer.NewObject(GetPos().Line, reader.ReadByte());

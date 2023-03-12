@@ -1,0 +1,62 @@
+		RoaaVM Specification
+	   ********************** 
+		   Zeyad Ahmed Ali
+				2023
+________________________________________
+________________________________________
+
+1- Structure
+========================================
+
+2- 'program' File Structure
+========================================
+
+3. Data Types and Values
+=========================================
+	There are 2 types of values in RVM: primitive types and reference types.
+
+	3.1 Integral Types and Floating-Point Types
+	-------------------------------------------
+		* s8: signed 8-bit integer, and whose default value is zero
+		* s16: signed 16-bit integer, and whose default value is zero
+		* s32: signed 32-bit integer, and whose default value is zero
+		* s64: signed 8-bit integer, and whose default value is zero
+		* flt: signed 8-bit integer, and whose default value is zero
+		* dbl: signed 8-bit integer, and whose default value is zero
+		* chr: 16-bit unsigned integer representing a unicode character, and whose
+		  default value is ('\u0000')
+	
+	3.2 Reference Types
+	-------------------
+		There are 3 types of reference types: 
+		
+		* Array Types:
+			It manages the length and provides a random accessing 
+		* Class Types:
+			Members,
+			Fields,
+		* String Types:
+			Length
+			
+
+4. Constants Specification
+========================================
+
+
+5. Instruction Set
+========================================
+
+
+FSOTRE:
+	FSTORE strings[u8:fieldID]
+	STACK: [value][objref] -> []
+
+STORE:
+	STORE u8:localID
+	STACK: [value] -> []
+
+6. Limitations
+========================================
+	- 256 Local variable per function (considering if the source languages
+	  supports function parameters, they will be counted as local variables too).
+	  
