@@ -69,21 +69,23 @@ namespace LangTrace.VirtualMachine
 
 		public void Call(string functionName, params Value[] arguments)
         {
-			var func = _program.Functions.First(f => f.Name == functionName);
+			Call(_program.Functions.First(f => f.Name == functionName), arguments);       
+        }
 
-			if (arguments.Length != func.Arity)
-				throw new ArgumentException("Different number of arguments");
+        private void Call(ProgramFile.Function function, params Value[] arguments)
+        {
+            if (arguments.Length != function.Arity)
+                throw new ArgumentException("Different number of arguments");
 
             Frames.Push(new Frame());
 
             for (int i = 0; i < arguments.Length; i++)
             {
-				CurrentFrame.Locals[i] = arguments[i];
+                CurrentFrame.Locals[i] = arguments[i];
             }
 
-			Execute(func);
+            Execute(function);
         }
-
 		void printVars()
 		{
 			Debug.Write("VARS: ");
@@ -114,10 +116,18 @@ namespace LangTrace.VirtualMachine
         }
 		private void Execute(ProgramFile.Function function)
         {
+            Debug.WriteLine($"=== Executing {function.Name} ===");
             var linetable = function.LineTable;
 			BinaryReader reader = new BinaryReader(new MemoryStream(function.Bytecode));
 
-            int Line() => linetable[(int)reader.BaseStream.Position];
+            int Line()
+            {
+                if (linetable.ContainsKey((int)reader.BaseStream.Position))
+                    return linetable[(int)reader.BaseStream.Position];
+                else
+                    return -1;
+            }
+            
 
             // Local Helper:
             TokenPosition GetPos() => new TokenPosition(reader.ReadInt16(), reader.ReadInt16(), reader.ReadInt16());
@@ -175,7 +185,20 @@ namespace LangTrace.VirtualMachine
 
                     #region Control Flow
                     case Opcode.RET:
-
+                        Frames.Pop();
+                        _tracer.Return(Line());
+                        return;
+                    case Opcode.CALL:
+                        {
+                            int index = reader.ReadByte();
+                            Debug.Write($"({index})");
+                            var callee = _program.Functions[index];
+                            var args = new Value[callee.Arity];
+                            for (int i = args.Length - 1; i >= 0; i--)
+                                args[i] = Pop();
+                            Call(callee, args);
+                            _tracer.Call(Line(), callee.Name, null, args.Select(a => a.ToString()).ToArray());
+                        }
                         break;
                     #endregion
 

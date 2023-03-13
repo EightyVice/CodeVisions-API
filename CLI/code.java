@@ -8,12 +8,17 @@
 	}
 
 
+	public static void func(){
+		Link a = new Link();
+	}
+
 	public static void Main(){
 		Link a = new Link();
 		Link y = new Link();
 		Link b = a;
 		Link c = null;
 		int[] arr = {1,2,3,4};
-		b.x = 4;  
+		b.x = 4;
+		func();
 	}
 }

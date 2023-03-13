@@ -21,7 +21,7 @@ namespace LangTrace.Languages.Java
 		private List<string> _strings = new List<string>();
 		private Dictionary<int, int> _lines = new Dictionary<int, int>();
 
-		private Dictionary<string, int> _methods = new Dictionary<string, int>();
+		private List<string> _methodsID = new List<string>();
 
 		public JavaCompiler(CompilationUnit program)
 		{
@@ -65,6 +65,9 @@ namespace LangTrace.Languages.Java
 				
 				foreach(var method in cls.Methods)
                 {
+					// Methods indeces needs to be known first before compilation
+					_methodsID.Add(method.Name);
+
 					// Compile methods
 					var bytecode = CompileMethod(method);
 
@@ -309,9 +312,7 @@ namespace LangTrace.Languages.Java
 				Emit(arg);
 
 			// Push Address
-			_emitter.PUSHI(_methods[callExpr.Name]);
-			
-			_emitter.CALL();
+			_emitter.CALL((byte)_methodsID.IndexOf(callExpr.Name));
 
 		}
 

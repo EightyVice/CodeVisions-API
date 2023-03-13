@@ -142,7 +142,7 @@ namespace LangTrace.VirtualMachine
 		public void FSTOR(byte index) { addByte(Opcode.FSTOR); addByte(index); }
 		
 		public void PRINT() => addByte(Opcode.PRNT);
-		public void CALL() => addByte(Opcode.CALL);
+        public void CALL(byte index) { addByte(Opcode.CALL); addByte(index); }
 		public void PIP() => addByte(Opcode.PIP);
 		public void RET() => addByte(Opcode.RET);
 
