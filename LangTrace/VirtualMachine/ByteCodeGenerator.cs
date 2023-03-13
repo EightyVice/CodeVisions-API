@@ -79,6 +79,7 @@ namespace LangTrace.VirtualMachine
 
 		// References
 		NEW,
+        ARRAY,
 		FLOAD,
 		FSTOR,
 
@@ -92,6 +93,7 @@ namespace LangTrace.VirtualMachine
 		// Implementation Dependendat Opcode
 		IMPDP,
 	}
+
 	/// <summary>
 	/// A bytecode generator for RoaaVM
 	/// </summary>
@@ -134,6 +136,8 @@ namespace LangTrace.VirtualMachine
 		public void CPUSH(byte index) { addByte(Opcode.CPUSH); addByte(index); }
 
 		public void NEW(byte index) { addByte(Opcode.NEW); addByte(index); }
+        public void ARRAY(byte length) {addByte(Opcode.ARRAY); addByte(length); }
+
 		public void FLOAD(byte index) { addByte(Opcode.FLOAD); addByte(index); }
 		public void FSTOR(byte index) { addByte(Opcode.FSTOR); addByte(index); }
 		

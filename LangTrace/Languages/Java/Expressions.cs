@@ -19,12 +19,14 @@ namespace LangTrace.Languages.Java
 		void Visit(ConstructorCall ctorExpr);
 		void Visit(Null nullExpr);
 		void Visit(FieldAccess fieldAccessExpr);
+		void Visit(ArrayExpression arrayExpr);
 
 	}
 	internal interface IExpression
 	{
 		public void Accept(IExpressionVisitor visitor);
 		public TokenPosition Position { get; }
+		public byte[] ToBytes();
 
 	}
 
@@ -63,9 +65,37 @@ namespace LangTrace.Languages.Java
 		{
 			visitor.Visit(this);
 		}
-	}
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	#endregion
+
+	internal class ArrayExpression : IExpression
+    {
+		public IExpression[] Elements { get; }
+
+        public TokenPosition Position { get; }
+
+        public ArrayExpression(IExpression[] elements, TokenPosition position)
+        {
+            Elements = elements;
+            Position = position;
+        }
+
+        public void Accept(IExpressionVisitor visitor)
+        {
+			visitor.Visit(this);
+        }
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 	internal class Integer : IExpression
 	{
 		public readonly int Value;
@@ -99,7 +129,12 @@ namespace LangTrace.Languages.Java
 		{
 			visitor.Visit(this);
 		}
-	}
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	internal class Boolean : IExpression
 	{
@@ -123,8 +158,11 @@ namespace LangTrace.Languages.Java
 			visitor.Visit(this);
 		}
 
-
-	}
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     internal class Null : IExpression
     {
@@ -137,6 +175,11 @@ namespace LangTrace.Languages.Java
         public void Accept(IExpressionVisitor visitor)
         {
 			visitor.Visit(this);
+        }
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
         }
     }
     internal class FunctionCall : IExpression
@@ -157,7 +200,12 @@ namespace LangTrace.Languages.Java
 		{
 			visitor.Visit(this);
 		}
-	}
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 
 	internal class ConstructorCall : IExpression
@@ -178,6 +226,11 @@ namespace LangTrace.Languages.Java
         {
 			visitor.Visit(this);
         }
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 	internal class FieldAccess : IExpression
@@ -197,6 +250,11 @@ namespace LangTrace.Languages.Java
         {
 			visitor.Visit(this);
         }
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
     }
 	internal class Identifier : IExpression
 	{
@@ -213,7 +271,12 @@ namespace LangTrace.Languages.Java
 		{
 			visitor.Visit(this);
 		}
-	}
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 	internal class Assignment : IExpression
 	{
 		internal readonly IExpression Lhs;
@@ -232,7 +295,12 @@ namespace LangTrace.Languages.Java
 		{
 			visitor.Visit(this);
 		}
-	}
+
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 	internal class ObjectRef
 	{

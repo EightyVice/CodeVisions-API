@@ -234,7 +234,20 @@ namespace LangTrace.Languages.Java
 		#endregion
 
 		#region Expression
-		
+		public void Visit(ArrayExpression arrayExpr)
+        {
+			// ARRAY <type> <length> <elements...>
+			int arr_length = arrayExpr.Elements.Length;
+
+			if (arr_length == 0)
+				return;
+
+			// push 
+			foreach (var expr in arrayExpr.Elements)
+				Emit(expr);
+            
+			_emitter.ARRAY((byte)arr_length);
+        }
 		public void Visit(Integer integerExpr)
 		{
 			if(integerExpr.Value >= 1 & integerExpr.Value < 6) _emitter.PUSHI(integerExpr.Value);

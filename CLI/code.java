@@ -13,6 +13,7 @@
 		Link y = new Link();
 		Link b = a;
 		Link c = null;
-		//b.x = 4;  
+		int[] arr = {1,2,3,4};
+		b.x = 4;  
 	}
 }

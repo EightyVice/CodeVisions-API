@@ -19,7 +19,7 @@ namespace LangTrace.VirtualMachine
 
         internal class Heap
         {
-            List<Object> objects = new List<Object>();
+            List<Value> objects = new List<Value>();
 
             public Object CreateObject(ProgramFile.Class @class)
             {
@@ -28,7 +28,14 @@ namespace LangTrace.VirtualMachine
                 return obj;
             }
 
-            public int FindObject(Object obj) => objects.IndexOf(obj);
+            public ArrayObject CreateArray(Value[] values)
+            {
+                ArrayObject arr = new ArrayObject(values);
+                objects.Add(arr);
+                return arr;
+            }
+
+            public int FindObject(Value obj) => objects.IndexOf(obj);
 
         }
 
@@ -98,7 +105,10 @@ namespace LangTrace.VirtualMachine
         private string StrVal(Value value)
         {
             if (value is Object)
-                return $"obj:{ObjectsHeap.FindObject((Object)value)}";
+                return $"obj:{ObjectsHeap.FindObject(value)}";
+
+            if (value is ArrayObject)
+                return $"arr:{ObjectsHeap.FindObject(value)}";
 
             return value.ToString();
         }
@@ -196,7 +206,16 @@ namespace LangTrace.VirtualMachine
                             _tracer.NewObject(Line(), index);
                         }
                         break;
-
+                    case Opcode.ARRAY:
+                        {
+                            int length = reader.ReadByte();
+                            Value[] array = new Value[length];
+                            for (int i = length - 1; i >= 0; i--)
+                                array[i] = Pop();
+                            Push(ObjectsHeap.CreateArray(array));
+                            _tracer.NewArray(Line(), array.Select(e => e.ToString()).ToArray());
+                        }
+                        break;
                     case Opcode.FLOAD:
                         {
                             int index = reader.ReadByte(); Debug.Write($"({index})");
@@ -216,6 +235,7 @@ namespace LangTrace.VirtualMachine
                             var field_name = _program.Strings[index];
                             Debug.Write($" {index}:\"{field_name}\" ");
                             obj[field_name] = val;
+                            _tracer.SetField(Line(), ObjectsHeap.FindObject(obj), field_name, StrVal(val));
                         }
                         break;
                     // IO

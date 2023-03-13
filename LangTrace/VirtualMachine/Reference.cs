@@ -38,4 +38,18 @@ namespace LangTrace.VirtualMachine
             return ret + "}";
         }
     }
+
+    internal class ArrayObject : Value
+    {
+        private Value[] _array;
+
+        public int Length { get; }
+        public ArrayObject(Value[] array) => _array = array;
+
+        public Value this[int index] { get => _array[index]; set => _array[index] = value; }
+        public override string ToString()
+        {
+            return "{" + string.Join(", ", (object[])_array) + "}";
+        }
+    }
 }

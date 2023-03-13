@@ -13,7 +13,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
         List<object> functions = new List<object>();
         List<object> classes = new List<object>();
 
-        public void SetField(int line, int objectId, string fieldName, string oldVal, string newVal, string tag = null)
+        public void SetField(int line, int objectId, string fieldName, string value, string tag = null)
         {
             traces.Add(new
             {
@@ -23,8 +23,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 {
                     objectId = objectId,
                     fieldName = fieldName,
-                    oldVal = oldVal,
-                    newVal = newVal,
+                    value = value,
                 },
                 tag = tag
             });
@@ -136,6 +135,9 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
         public void NewObject(int line, int clsID, string tag = null) => AddTrace(line, "new_object", new { classID = clsID }, tag);
+
+        public void NewArray(int line, string[] elements, string tag = null)
+            => AddTrace(line, "new_array", new { elements = elements }, tag);
     }
 
 }

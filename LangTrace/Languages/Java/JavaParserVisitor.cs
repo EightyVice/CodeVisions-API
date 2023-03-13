@@ -45,8 +45,10 @@ namespace LangTrace.Languages.Java
 			TypeDescriptor desc = new TypeDescriptor();
 
 			// Is Primitive?
-			if (type_ctx.GetText().EndsWith("[]"))
-				desc.IsArray = true;
+			if (type_ctx.GetText().Contains("[]"))
+				desc.IsArray = true; // TODO: Array depth
+            
+
 
 			if (type_ctx.primitiveType() != null)
 			{
@@ -192,7 +194,10 @@ namespace LangTrace.Languages.Java
 				// check initializer value
 				if(vardecl.variableInitializer() != null)
 				{
-					init = (IExpression)Visit(vardecl.variableInitializer().expression());
+					if (vardecl.variableInitializer().expression() != null)
+						init = (IExpression)Visit(vardecl.variableInitializer().expression());
+					else
+						init = (IExpression)Visit(vardecl.variableInitializer().arrayInitializer());
 				}
 				localvars.Add(new LocalVariable(decName, decType, init));
 			}
@@ -310,9 +315,16 @@ namespace LangTrace.Languages.Java
 			return VisitChildren(context);
 		}
 
-		#region Expression
+        #region Expression
+        public override object VisitArrayInitializer([NotNull] JavaParser.ArrayInitializerContext context)
+        {
+			var exprs = new List<IExpression>();
+			foreach (var exp in context.variableInitializer())
+				exprs.Add((IExpression)Visit(exp));
 
-		public override object VisitTermExpr([NotNull] JavaParser.TermExprContext context)
+			return new ArrayExpression(exprs.ToArray(), GetPosition(context)); 
+		}
+        public override object VisitTermExpr([NotNull] JavaParser.TermExprContext context)
 		{
 			IExpression lhs = (IExpression)Visit(context.expression(0));
 			IExpression rhs = (IExpression)Visit(context.expression(1));
