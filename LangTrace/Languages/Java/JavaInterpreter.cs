@@ -47,7 +47,7 @@ namespace LangTrace.Languages.Java
 
 				Console.WriteLine("Running...\n");
 				vm.Call(entryPoint);
-
+				Console.WriteLine("VM ran code successfully, printing trace...");
 				Console.WriteLine(json_tracer.ToString());
 
 			}

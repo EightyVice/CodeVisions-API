@@ -219,10 +219,11 @@ namespace LangTrace.Languages.Java
 		internal readonly IExpression Lhs;
 		internal readonly IExpression Value;
 
-		public Assignment(IExpression lhs, IExpression value)
+		public Assignment(IExpression lhs, IExpression value, TokenPosition position)
 		{
 			Lhs = lhs;
 			Value = value;
+			Position = position;
 		}
 
         public TokenPosition Position { get; }

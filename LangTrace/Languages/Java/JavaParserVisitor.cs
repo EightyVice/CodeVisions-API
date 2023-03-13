@@ -138,10 +138,11 @@ namespace LangTrace.Languages.Java
 								new ExpressionStatement(
 									new Assignment(
 										new Identifier(v.Name),
-										v.InitialValue
-									), new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex)
+										v.InitialValue,
+										GetPosition(stmt)
+									), GetPosition(stmt) //TODO: assignment vs lhs start/end index
 								)
-							);
+							) ;
 						}
 					}
 					else
@@ -240,10 +241,11 @@ namespace LangTrace.Languages.Java
 								new ExpressionStatement(
 									new Assignment(
 										new Identifier(v.Name),
-										v.InitialValue
-									), new TokenPosition(context.Start.Line, context.Start.StartIndex, context.Stop.StopIndex)
+										v.InitialValue,
+										GetPosition(stmt)
+									), GetPosition(stmt)
 								)
-							);
+							) ;
 						}
 					}
 					else
@@ -383,7 +385,7 @@ namespace LangTrace.Languages.Java
 			IExpression rhs = (IExpression)Visit(context.expression(1));
 
 			if (context.bop.Text == "=")
-				return new Assignment(lhs, rhs);
+				return new Assignment(lhs, rhs, GetPosition(context));
 
 			return null;
 		}

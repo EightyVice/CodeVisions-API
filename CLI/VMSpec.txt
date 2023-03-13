@@ -10,6 +10,11 @@ ________________________________________
 
 2- 'program' File Structure
 ========================================
+	- 'classes' segment
+	- 'functions' segment
+		- 'LineKeyTable' [start PC, end PC] -> line
+	- 'constants' segment
+	- 'strings' segment
 
 3. Data Types and Values
 =========================================

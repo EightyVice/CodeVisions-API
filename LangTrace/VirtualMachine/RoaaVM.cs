@@ -27,6 +27,9 @@ namespace LangTrace.VirtualMachine
                 objects.Add(obj);
                 return obj;
             }
+
+            public int FindObject(Object obj) => objects.IndexOf(obj);
+
         }
 
 		public readonly Stack<Value> OperandStack = new Stack<Value>();
@@ -71,7 +74,7 @@ namespace LangTrace.VirtualMachine
 				CurrentFrame.Locals[i] = arguments[i];
             }
 
-			Execute(func.Bytecode);
+			Execute(func);
         }
 
 		void printVars()
@@ -92,10 +95,20 @@ namespace LangTrace.VirtualMachine
 		}
 		
         
-		private void Execute(byte[] bytecode)
+        private string StrVal(Value value)
         {
-			BinaryReader reader = new BinaryReader(new MemoryStream(bytecode));
-			
+            if (value is Object)
+                return $"obj:{ObjectsHeap.FindObject((Object)value)}";
+
+            return value.ToString();
+        }
+		private void Execute(ProgramFile.Function function)
+        {
+            var linetable = function.LineTable;
+			BinaryReader reader = new BinaryReader(new MemoryStream(function.Bytecode));
+
+            int Line() => linetable[(int)reader.BaseStream.Position];
+
             // Local Helper:
             TokenPosition GetPos() => new TokenPosition(reader.ReadInt16(), reader.ReadInt16(), reader.ReadInt16());
 			while(reader.BaseStream.Position < reader.BaseStream.Length)
@@ -156,13 +169,15 @@ namespace LangTrace.VirtualMachine
                         break;
                     #endregion
 
-
+                       
                     // Variables
                     case Opcode.STORE:
                         {
                             int index = reader.ReadByte();
                             Debug.Write($"({index})");
                             CurrentFrame.Locals[index] = OperandStack.Pop();
+
+                            _tracer.Assign(Line(), function.Locals[index].Name, StrVal(CurrentFrame.Locals[index]));
                         }
                         break;
                     case Opcode.LOAD:
@@ -178,6 +193,7 @@ namespace LangTrace.VirtualMachine
                         {
                             int index = reader.ReadByte(); Debug.Write($"({index})");
                             Push(ObjectsHeap.CreateObject(_program.Classes[index]));
+                            _tracer.NewObject(Line(), index);
                         }
                         break;
 
@@ -188,6 +204,7 @@ namespace LangTrace.VirtualMachine
                             var field_name = _program.Strings[index];
                             Debug.Write($" {index}:\"{field_name}\" ");
                             Push(obj[field_name]);
+                            
                         }
                         break;
 
@@ -210,23 +227,7 @@ namespace LangTrace.VirtualMachine
 
 
                     case Opcode.IMPDP:
-                        {
-                            TracerOpcode tracer_opcode = (TracerOpcode)reader.ReadByte();
-                            switch (tracer_opcode)
-                            {
-                                case TracerOpcode.VARDEC:
-                                    break;
-                                case TracerOpcode.PRINT:
-                                    break;
-                                case TracerOpcode.NEW_OBJ: 
-                                    {
-                                        _tracer.NewObject(GetPos().Line, reader.ReadByte());
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
+
                         break;
                 }
                 foreach (var s in OperandStack.Reverse())

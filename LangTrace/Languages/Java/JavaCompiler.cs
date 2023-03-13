@@ -19,6 +19,7 @@ namespace LangTrace.Languages.Java
 		private List<string> _localIDs = new List<string>();
 		private List<string> _roIDs = new List<string>();
 		private List<string> _strings = new List<string>();
+		private Dictionary<int, int> _lines = new Dictionary<int, int>();
 
 		private Dictionary<string, int> _methods = new Dictionary<string, int>();
 
@@ -86,7 +87,7 @@ namespace LangTrace.Languages.Java
             
 
 					// Methods metadata
-					methods.Add(new ProgramFile.Function(method.Name, null, parameters.Length, locals.ToArray(), bytecode));
+					methods.Add(new ProgramFile.Function(method.Name, null, parameters.Length, locals.ToArray(), bytecode, _lines));
                 }
             }
 
@@ -118,6 +119,8 @@ namespace LangTrace.Languages.Java
 		private byte[] CompileMethod(Method method)
         {
 			_emitter = new ByteCodeGenerator();
+			_localIDs = new List<string>();
+			_lines = new Dictionary<int, int>();
 
 			foreach(var stmt in method.Statements){
 				Emit(stmt);
@@ -182,10 +185,29 @@ namespace LangTrace.Languages.Java
 			Emit(exprStmt.expression);
 		}
 
-		void Emit(IExpression expr) => expr.Accept(this);
-	
+		void addlineTable(int line, int start, int end)
+		{
+			for (int pc = start; pc <= end; pc++)
+			{
+				if(!_lines.ContainsKey(pc))
+					_lines.Add(pc, line);
+			}
+		}
+		void Emit(IExpression expr)
+		{
+			int start_pc = _emitter.Length;
+			expr.Accept(this);
+			int end_pc = _emitter.Length;
+			addlineTable(expr.Position.Line, start_pc, end_pc);
+		}
 
-		void Emit(IStatement stmt) => stmt.Accept(this);
+		void Emit(IStatement stmt)
+		{
+			int start_pc = _emitter.Length;
+			stmt.Accept(this);
+			int end_pc = _emitter.Length;
+			addlineTable(stmt.Position.Line, start_pc, end_pc);
+		}
 
 		byte[] EmitNoAppend(IExpression expr)
 		{
@@ -258,7 +280,7 @@ namespace LangTrace.Languages.Java
 
 		public void Visit(FunctionCall callExpr)
 		{
-
+			
 			if (callExpr.Name == "print")
 			{
 				// Emit arguments in REVERSE order
@@ -328,8 +350,7 @@ namespace LangTrace.Languages.Java
 			byte index = (byte)Array.FindIndex(_program.Classes, c => c.Name == ctorExpr.ClassName);
 			_emitter.NEW(index);
 
-			// Tracer Opcode
-			_emitter.TRACE_NEW(ctorExpr.Position, index);
+
         }
         #endregion
 

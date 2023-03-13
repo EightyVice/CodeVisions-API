@@ -9,13 +9,13 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 {
     internal class JSONTraceWriter : ITraceWriter
     {
-        List<object> trace = new List<object>();
+        List<object> traces = new List<object>();
         List<object> functions = new List<object>();
         List<object> classes = new List<object>();
 
         public void SetField(int line, int objectId, string fieldName, string oldVal, string newVal, string tag = null)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = "store_field",
@@ -30,17 +30,16 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
 
-        public void Assign(int line, string name, string oldVal, string newVal, string tag = null)
+        public void Assign(int line, string name, string value, string tag = null)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = "store",
                 event_data = new
                 {
                     name = name,
-                    oldValue = oldVal,
-                    newValue = newVal,
+                    value = value,
                 },
                 tag = tag
             });
@@ -48,7 +47,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         public void Call(int line, string funcName, string tag, params string[] args)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = "call",
@@ -76,7 +75,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         public void Return(int line, object returnValue = null)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = "return",
@@ -94,7 +93,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 {
                     classes,
                     functions,
-                    trace
+                    traces
                 },
                 new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }
             );
@@ -112,7 +111,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         public void SetArrayElement(int line, int arr_id, int index, string oldVal, string newVal, string tag = null)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = "store_element",
@@ -128,7 +127,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         private void AddTrace(int line, string eventName, object eventData, string tag = null)
         {
-            trace.Add(new
+            traces.Add(new
             {
                 line = line,
                 @event = eventName,
@@ -136,7 +135,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 tag = tag
             });
         }
-        public void NewObject(int line, int objID, string tag = null) => AddTrace(line, "new_object", new { objectID = objID }, tag);
+        public void NewObject(int line, int clsID, string tag = null) => AddTrace(line, "new_object", new { classID = clsID }, tag);
     }
 
 }

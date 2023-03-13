@@ -89,19 +89,9 @@ namespace LangTrace.VirtualMachine
         // Breakpoint
         BRKPNT,
 
-		// Trace Signaler (IMPDP)
+		// Implementation Dependendat Opcode
 		IMPDP,
 	}
-
-    // Trace Signaler Opcodes
-    internal enum TracerOpcode 
-    {
-        VARDEC,
-        PRINT,
-        STORE_VAR,
-        STORE_FIELD,
-        NEW_OBJ,
-    }
 	/// <summary>
 	/// A bytecode generator for RoaaVM
 	/// </summary>
@@ -113,6 +103,8 @@ namespace LangTrace.VirtualMachine
 		void addByte(byte b) => _buffer.Add(b);
         void addShort(short s) => _buffer.AddRange(BitConverter.GetBytes(s));
 		void addByte(Opcode opcode) => _buffer.Add((byte)opcode);
+        void addString(string s) => _buffer.AddRange(Encoding.ASCII.GetBytes(s));
+
 		public void AddBytes(params byte[] bytes) => _buffer.AddRange(bytes);
 		byte[] getintBytes(int i) => BitConverter.GetBytes(i);
 		
@@ -150,22 +142,7 @@ namespace LangTrace.VirtualMachine
 		public void PIP() => addByte(Opcode.PIP);
 		public void RET() => addByte(Opcode.RET);
 
-        // Tracer
-        private void TRACE(TracerOpcode opcode, TokenPosition position)
-        {
-            addByte(Opcode.IMPDP);
-            addByte((byte)opcode); // Tracer Opcode
-            addShort((short)position.Line);
-            addShort((short)position.Start);
-            addShort((short)position.End);
-        }
-        public void TRACE_STORE_FIELD(TokenPosition position, byte objID, byte fieldStringID) { 
-            TRACE(TracerOpcode.STORE_FIELD, position);
-            addByte(objID);
-            addByte(fieldStringID);
-        }
-        public void TRACE_STORE_VAR(TokenPosition position) { }
-        public void TRACE_NEW(TokenPosition position, byte classID) { TRACE(TracerOpcode.NEW_OBJ, position); addByte(classID); }
+
 		public byte[] GetByteCode()
 		{
 			return _buffer.ToArray();

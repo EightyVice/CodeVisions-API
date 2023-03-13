@@ -40,14 +40,16 @@ namespace LangTrace.VirtualMachine
             public int Arity { get; }
             public (string Name, Descriptor Type)[] Locals { get; }
             public byte[] Bytecode { get; }
+            public IReadOnlyDictionary<int, int> LineTable { get; }
 
-            public Function(string name, Descriptor returnType, int arity, (string Name, Descriptor Type)[] locals, byte[] bytecode)
+            public Function(string name, Descriptor returnType, int arity, (string Name, Descriptor Type)[] locals, byte[] bytecode, IReadOnlyDictionary<int, int> lineTable)
             {
                 Name = name;
                 ReturnType = returnType;
                 Arity = arity;
                 Locals = locals;
                 Bytecode = bytecode;
+                LineTable = lineTable;
             }
         }
 
