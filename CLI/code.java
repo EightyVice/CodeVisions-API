@@ -1,24 +1,20 @@
 ﻿public class Link{
-	int x;
-	int n;
-
-
-	public int sum(int a, int b){
-		print(a + b + x + n);
-	}
-
-
-	public static void func(){
-		Link a = new Link();
-	}
 
 	public static void Main(){
+		int x = 3;
+		int y = 4;
+		if(x > y)
+			print(1);
+		else
+			print(0);
+	/*
 		Link a = new Link();
 		Link y = new Link();
 		Link b = a;
 		Link c = null;
 		int[] arr = {1,2,3,4};
 		b.x = 4;
-		func();
+		func1(1);
+	*/
 	}
 }

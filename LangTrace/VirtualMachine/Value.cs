@@ -22,7 +22,18 @@ namespace LangTrace.VirtualMachine
 		public SInt32(int value) => Value = value;
 
 		public static SInt32 operator +(SInt32 a, SInt32 b) => new SInt32(a.Value + b.Value);
-        public override string ToString()
+		public static SInt32 operator -(SInt32 a, SInt32 b) => new SInt32(a.Value - b.Value);
+		public static SInt32 operator *(SInt32 a, SInt32 b) => new SInt32(a.Value * b.Value);
+		public static SInt32 operator /(SInt32 a, SInt32 b) => new SInt32(a.Value / b.Value);
+		public static SInt32 operator >(SInt32 a, SInt32 b) => new SInt32(a.Value > b.Value ? 1 : 0);
+		public static SInt32 operator <(SInt32 a, SInt32 b) => new SInt32(a.Value < b.Value ? 1 : 0);
+		public static SInt32 operator ==(SInt32 a, SInt32 b) => new SInt32(a.Value == b.Value ? 1 : 0);
+		public static SInt32 operator !=(SInt32 a, SInt32 b) => new SInt32(a.Value > b.Value ? 1 : 0);
+		public static SInt32 operator >=(SInt32 a, SInt32 b) => new SInt32(a.Value >= b.Value ? 1 : 0);
+		public static SInt32 operator <=(SInt32 a, SInt32 b) => new SInt32(a.Value <= b.Value ? 1 : 0);
+
+
+		public override string ToString()
         {
 			return Value.ToString();
         }

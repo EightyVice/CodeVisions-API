@@ -99,15 +99,22 @@ namespace LangTrace.VirtualMachine
 	/// </summary>
 	internal class ByteCodeGenerator
 	{
-		List<byte> _buffer = new List<byte>();
+        BinaryWriter _writer;
+        MemoryStream _stream;
+        public ByteCodeGenerator(MemoryStream memoryStream)
+        {
+            _writer = new BinaryWriter(memoryStream);
+            _stream = memoryStream;
 
-		public int Length { get => _buffer.Count; }
-		void addByte(byte b) => _buffer.Add(b);
-        void addShort(short s) => _buffer.AddRange(BitConverter.GetBytes(s));
-		void addByte(Opcode opcode) => _buffer.Add((byte)opcode);
-        void addString(string s) => _buffer.AddRange(Encoding.ASCII.GetBytes(s));
+        }
 
-		public void AddBytes(params byte[] bytes) => _buffer.AddRange(bytes);
+        public int Length { get => (int)_writer.BaseStream.Position; }
+		void addByte(byte b) => _writer.Write(b);
+        void addShort(short s) => _writer.Write(s);
+		void addByte(Opcode opcode) => _writer.Write((byte)opcode);
+        void addString(string s) => _writer.Write(Encoding.ASCII.GetBytes(s));
+
+		public void AddBytes(params byte[] bytes) => _writer.Write(bytes);
 		byte[] getintBytes(int i) => BitConverter.GetBytes(i);
 		
 
@@ -149,7 +156,7 @@ namespace LangTrace.VirtualMachine
 
 		public byte[] GetByteCode()
 		{
-			return _buffer.ToArray();
+            return _stream.ToArray();
 		}
 
 		public static void Disassemble(byte[] byteCode, TextWriter output)

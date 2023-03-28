@@ -47,8 +47,6 @@ namespace LangTrace.VirtualMachine
 
         private void Push(Value value) => OperandStack.Push(value);
         private Value Pop() => OperandStack.Pop();
-
-
 		ProgramFile _program;
         ITraceWriter _tracer;
 
@@ -63,13 +61,15 @@ namespace LangTrace.VirtualMachine
                 _tracer.DefineClass(cls.Name, cls.Fields.Select(f => f.Name).ToArray());
 
             foreach(var method in _program.Functions)
-                _tracer.DefineFunction(method.Name, "todo", method.Locals.Select(f => f.Name).ToArray());
+                _tracer.DefineFunction(method.Name, method.ReturnType?.ToString(), method.Arity, method.Locals.Select(f => f.Name).ToArray());
             
 		}
 
 		public void Call(string functionName, params Value[] arguments)
         {
-			Call(_program.Functions.First(f => f.Name == functionName), arguments);       
+            var func = _program.Functions.First(f => f.Name == functionName);
+            _tracer.Call(-1, _program.Functions.ToList().IndexOf(func), null, arguments.Select(a => a.ToString()).ToArray());
+            Call(func, arguments);       
         }
 
         private void Call(ProgramFile.Function function, params Value[] arguments)
@@ -131,6 +131,9 @@ namespace LangTrace.VirtualMachine
 
             // Local Helper:
             TokenPosition GetPos() => new TokenPosition(reader.ReadInt16(), reader.ReadInt16(), reader.ReadInt16());
+            int GetPC() => (int)reader.BaseStream.Position;
+            void OffsetPC(int offset) => reader.BaseStream.Position += offset;
+
 			while(reader.BaseStream.Position < reader.BaseStream.Length)
             {
 				Opcode opcode = (Opcode)reader.ReadByte();
@@ -180,10 +183,20 @@ namespace LangTrace.VirtualMachine
                     #endregion
 
                     #region Comparison
+                    case Opcode.EQUL: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a == b); } break;
+                    case Opcode.NEQU: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a != b); } break;
+                    case Opcode.MORE: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a > b); } break;
+                    case Opcode.MEQU: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a >= b); } break;
+                    case Opcode.LESS: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a < b); } break;
+                    case Opcode.LEQU: { SInt32 b = (SInt32)Pop(); SInt32 a = (SInt32)Pop(); Push(a <= b); }  break;
 
                     #endregion
 
                     #region Control Flow
+                    case Opcode.JMP:  { int offset = reader.ReadByte(); OffsetPC(offset); } break;
+                    case Opcode.JMPF:  { int offset = reader.ReadByte(); OffsetPC(offset); } break;
+                    case Opcode.JEQZ:  { int offset = reader.ReadByte(); if (((SInt32)Pop()).Value == 0) OffsetPC(offset); } break;
+                    case Opcode.JNEZ:  { int offset = reader.ReadByte(); if (((SInt32)Pop()).Value != 0) OffsetPC(offset); } break;
                     case Opcode.RET:
                         Frames.Pop();
                         _tracer.Return(Line());
@@ -196,8 +209,9 @@ namespace LangTrace.VirtualMachine
                             var args = new Value[callee.Arity];
                             for (int i = args.Length - 1; i >= 0; i--)
                                 args[i] = Pop();
+
+                            _tracer.Call(Line(), index, null, args.Select(a => a.ToString()).ToArray());
                             Call(callee, args);
-                            _tracer.Call(Line(), callee.Name, null, args.Select(a => a.ToString()).ToArray());
                         }
                         break;
                     #endregion
@@ -210,7 +224,7 @@ namespace LangTrace.VirtualMachine
                             Debug.Write($"({index})");
                             CurrentFrame.Locals[index] = OperandStack.Pop();
 
-                            _tracer.Assign(Line(), function.Locals[index].Name, StrVal(CurrentFrame.Locals[index]));
+                            _tracer.Assign(Line(), index, StrVal(CurrentFrame.Locals[index]));
                         }
                         break;
                     case Opcode.LOAD:

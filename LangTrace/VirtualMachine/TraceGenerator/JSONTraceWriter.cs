@@ -29,7 +29,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
 
-        public void Assign(int line, string name, string value, string tag = null)
+        public void Assign(int line, int localID, string value, string tag = null)
         {
             traces.Add(new
             {
@@ -37,14 +37,14 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 @event = "store",
                 event_data = new
                 {
-                    name = name,
+                    localId = localID,
                     value = value,
                 },
                 tag = tag
             });
         }
 
-        public void Call(int line, string funcName, string tag, params string[] args)
+        public void Call(int line, int funcId, string tag, params string[] args)
         {
             traces.Add(new
             {
@@ -52,19 +52,20 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 @event = "call",
                 event_data = new
                 {
-                    funcName = funcName,
+                    funcId = funcId,
                     args = args
                 },
                 tag = tag
             });
         }
 
-        public void DefineFunction(string name, string returnType, string[] locals, string tag = null)
+        public void DefineFunction(string name, string returnType, int arity, string[] locals, string tag = null)
         {
             functions.Add(new
             {
                 name = name,
                 returnType = returnType,
+                arity = arity,
                 locals = locals,
                 tag = tag
             });

@@ -14,7 +14,7 @@ namespace LangTrace.Languages.Java
 	{
 		private CompilationUnit _program;
 
-		private ByteCodeGenerator _emitter = new ByteCodeGenerator();
+		private ByteCodeGenerator _emitter = new ByteCodeGenerator(new MemoryStream());
 
 		private List<string> _localIDs = new List<string>();
 		private List<string> _roIDs = new List<string>();
@@ -62,12 +62,12 @@ namespace LangTrace.Languages.Java
 
 				classes.Add(new ProgramFile.Class(cls.Name, fields.ToArray()));
 				
-				
-				foreach(var method in cls.Methods)
-                {
-					// Methods indeces needs to be known first before compilation
+				foreach(var method in cls.Methods) // Methods indeces needs to be known first before compilation
 					_methodsID.Add(method.Name);
 
+
+				foreach (var method in cls.Methods)
+                {
 					// Compile methods
 					var bytecode = CompileMethod(method);
 
@@ -121,7 +121,7 @@ namespace LangTrace.Languages.Java
 
 		private byte[] CompileMethod(Method method)
         {
-			_emitter = new ByteCodeGenerator();
+			_emitter = new ByteCodeGenerator(new MemoryStream());
 			_localIDs = new List<string>();
 			_lines = new Dictionary<int, int>();
 
@@ -148,19 +148,27 @@ namespace LangTrace.Languages.Java
 			// Get Then Branch bytecode
 			var then_byte_code = EmitNoAppend(ifStmt.ThenBranch);
 
-			// Emit Jump if false (Jump if equal to zero)
-			_emitter.JEQZ((byte)then_byte_code.Length);
-			_emitter.AddBytes(then_byte_code);
+
 
 			if (ifStmt.ElseBranch != null) // There's an Else branch
 			{
+				// Emit Jump if false (Jump if equal to zero)
+				_emitter.JEQZ((byte)(then_byte_code.Length + 2));
+				_emitter.AddBytes(then_byte_code);
+
 				var else_byte_code = EmitNoAppend(ifStmt.ElseBranch);
-				_emitter.JNEZ((byte)else_byte_code.Length);
+				_emitter.JMP((byte)else_byte_code.Length);
+				//_emitter.JNEZ((byte)else_byte_code.Length);
 
 				_emitter.AddBytes(else_byte_code);
+            }
+            else
+            {
+				// Emit Jump if false (Jump if equal to zero)
+				_emitter.JEQZ((byte)then_byte_code.Length);
+				_emitter.AddBytes(then_byte_code);
 			}
 
-			_emitter.POP();
 		}
 
 		public void Visit(WhileStatement whileStmt)
@@ -215,7 +223,7 @@ namespace LangTrace.Languages.Java
 		byte[] EmitNoAppend(IExpression expr)
 		{
 			var main_gen = _emitter;
-			_emitter = new ByteCodeGenerator();
+			_emitter = new ByteCodeGenerator(new MemoryStream());
 			Emit(expr);
 
 			var bytes = _emitter.GetByteCode();
@@ -226,7 +234,7 @@ namespace LangTrace.Languages.Java
 		byte[] EmitNoAppend(IStatement stmt)
 		{
 			var main_gen = _emitter;
-			_emitter = new ByteCodeGenerator();
+			_emitter = new ByteCodeGenerator(new MemoryStream());
 			Emit(stmt);
 
 			var bytes = _emitter.GetByteCode();
@@ -253,7 +261,7 @@ namespace LangTrace.Languages.Java
         }
 		public void Visit(Integer integerExpr)
 		{
-			if(integerExpr.Value >= 1 & integerExpr.Value < 6) _emitter.PUSHI(integerExpr.Value);
+			if(integerExpr.Value >= 0 & integerExpr.Value < 6) _emitter.PUSHI(integerExpr.Value);
 			else
             {
 				var index = _constants.FindIndex(i => i is SInt32 && ((SInt32)i).Value == integerExpr.Value);
