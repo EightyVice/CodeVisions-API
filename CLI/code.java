@@ -1,12 +1,20 @@
 ﻿public class Link{
-
-	public static void Main(){
-		int x = 3;
-		int y = 4;
-		if(x > y)
-			print(1);
-		else
-			print(0);
+    // Function that return average of an array.
+    //static double average(int a[], int n)
+   // {
+    //     print(n);
+   // }
+     
+    //driver code
+    public static void Main()
+    {
+         
+        int[] arr = {10, 2, 3, 4, 5, 6, 7, 8, 9};
+        int n = arr.length;
+     
+        //print(average(arr, n));
+    }
+}
 	/*
 		Link a = new Link();
 		Link y = new Link();
@@ -16,5 +24,3 @@
 		b.x = 4;
 		func1(1);
 	*/
-	}
-}

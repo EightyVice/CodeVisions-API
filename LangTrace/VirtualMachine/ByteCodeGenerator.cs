@@ -110,6 +110,7 @@ namespace LangTrace.VirtualMachine
 
         public int Length { get => (int)_writer.BaseStream.Position; }
 		void addByte(byte b) => _writer.Write(b);
+		void addSbyte(sbyte b) => _writer.Write(b);
         void addShort(short s) => _writer.Write(s);
 		void addByte(Opcode opcode) => _writer.Write((byte)opcode);
         void addString(string s) => _writer.Write(Encoding.ASCII.GetBytes(s));
@@ -136,9 +137,9 @@ namespace LangTrace.VirtualMachine
 		public void STORE(byte id) { addByte(Opcode.STORE); addByte(id); }
 		public void LOAD(byte id) { addByte(Opcode.LOAD); addByte(id); }
 
-		public void JMP(byte offset) { addByte(Opcode.JMP); addByte(offset); }
-		public void JEQZ(byte offset) { addByte(Opcode.JEQZ); addByte(offset); }
-		public void JNEZ(byte offset) { addByte(Opcode.JNEZ); addByte(offset); }
+		public void JMP(sbyte offset) { addByte(Opcode.JMP); addSbyte(offset); }
+		public void JEQZ(sbyte offset) { addByte(Opcode.JEQZ); addSbyte(offset); }
+		public void JNEZ(sbyte offset) { addByte(Opcode.JNEZ); addSbyte(offset); }
 
 		public void CPUSH(byte index) { addByte(Opcode.CPUSH); addByte(index); }
 

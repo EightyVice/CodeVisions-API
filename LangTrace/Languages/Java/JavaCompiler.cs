@@ -153,11 +153,11 @@ namespace LangTrace.Languages.Java
 			if (ifStmt.ElseBranch != null) // There's an Else branch
 			{
 				// Emit Jump if false (Jump if equal to zero)
-				_emitter.JEQZ((byte)(then_byte_code.Length + 2));
+				_emitter.JEQZ((sbyte)(then_byte_code.Length + 2));
 				_emitter.AddBytes(then_byte_code);
 
 				var else_byte_code = EmitNoAppend(ifStmt.ElseBranch);
-				_emitter.JMP((byte)else_byte_code.Length);
+				_emitter.JMP((sbyte)else_byte_code.Length);
 				//_emitter.JNEZ((byte)else_byte_code.Length);
 
 				_emitter.AddBytes(else_byte_code);
@@ -165,7 +165,7 @@ namespace LangTrace.Languages.Java
             else
             {
 				// Emit Jump if false (Jump if equal to zero)
-				_emitter.JEQZ((byte)then_byte_code.Length);
+				_emitter.JEQZ((sbyte)then_byte_code.Length);
 				_emitter.AddBytes(then_byte_code);
 			}
 
@@ -181,12 +181,11 @@ namespace LangTrace.Languages.Java
 
 			var backward = _emitter.Length;
 
-			_emitter.JEQZ((byte)body_byte_code.Length);
+			_emitter.JEQZ((sbyte)body_byte_code.Length);
 			_emitter.AddBytes(body_byte_code);
 
 			// Push offset( -5 for PUSH (NUMBER))
-			_emitter.PUSHI(backward - _emitter.Length - 6);
-			_emitter.EmitOpcode(Opcode.JMP);
+			_emitter.JMP((sbyte)(-body_byte_code.Length-2));
 
 			// Pop Condition
 			_emitter.EmitOpcode(Opcode.POP);
@@ -265,6 +264,11 @@ namespace LangTrace.Languages.Java
 			else
             {
 				var index = _constants.FindIndex(i => i is SInt32 && ((SInt32)i).Value == integerExpr.Value);
+				if(index == -1)
+                {
+					_constants.Add(new SInt32(integerExpr.Value));
+					index = _constants.Count - 1;
+                }
 				_emitter.CPUSH((byte)index);
             }
 		}

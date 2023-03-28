@@ -43,7 +43,7 @@ namespace LangTrace.VirtualMachine
     {
         private Value[] _array;
 
-        public int Length { get; }
+        public int Length { get => _array.Length; }
         public ArrayObject(Value[] array) => _array = array;
 
         public Value this[int index] { get => _array[index]; set => _array[index] = value; }

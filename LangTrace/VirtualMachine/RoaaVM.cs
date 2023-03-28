@@ -148,27 +148,28 @@ namespace LangTrace.VirtualMachine
                     #region Stack Operations
                     case Opcode.PUSHI: OperandStack.Push(new SInt32(reader.ReadInt32())); break;
 
-                    case Opcode.PSHI0: OperandStack.Push(new SInt32(0)); break;
-                    case Opcode.PSHI1: OperandStack.Push(new SInt32(1)); break;
-                    case Opcode.PSHI2: OperandStack.Push(new SInt32(2)); break;
-                    case Opcode.PSHI3: OperandStack.Push(new SInt32(3)); break;
-                    case Opcode.PSHI4: OperandStack.Push(new SInt32(4)); break;
-                    case Opcode.PSHI5: OperandStack.Push(new SInt32(5)); break;
+                    case Opcode.PSHI0: Push(new SInt32(0)); break;
+                    case Opcode.PSHI1: Push(new SInt32(1)); break;
+                    case Opcode.PSHI2: Push(new SInt32(2)); break;
+                    case Opcode.PSHI3: Push(new SInt32(3)); break;
+                    case Opcode.PSHI4: Push(new SInt32(4)); break;
+                    case Opcode.PSHI5: Push(new SInt32(5)); break;
 
-                    case Opcode.PSHD0: OperandStack.Push(new Double(0.0f)); break;
-                    case Opcode.PSHD1: OperandStack.Push(new Double(1.0f)); break;
-                    case Opcode.PSHD2: OperandStack.Push(new Double(2.0f)); break;
-                    case Opcode.PSHD3: OperandStack.Push(new Double(3.0f)); break;
-                    case Opcode.PSHD4: OperandStack.Push(new Double(4.0f)); break;
-                    case Opcode.PSHD5: OperandStack.Push(new Double(5.0f)); break;
+                    case Opcode.PSHD0: Push(new Double(0.0f)); break;
+                    case Opcode.PSHD1: Push(new Double(1.0f)); break;
+                    case Opcode.PSHD2: Push(new Double(2.0f)); break;
+                    case Opcode.PSHD3: Push(new Double(3.0f)); break;
+                    case Opcode.PSHD4: Push(new Double(4.0f)); break;
+                    case Opcode.PSHD5: Push(new Double(5.0f)); break;
 
-                    case Opcode.PSHF0: OperandStack.Push(new Float(0.0f)); break;
-                    case Opcode.PSHF1: OperandStack.Push(new Float(1.0f)); break;
-                    case Opcode.PSHF2: OperandStack.Push(new Float(2.0f)); break;
-                    case Opcode.PSHF3: OperandStack.Push(new Float(3.0f)); break;
-                    case Opcode.PSHF4: OperandStack.Push(new Float(4.0f)); break;
-                    case Opcode.PSHF5: OperandStack.Push(new Float(5.0f)); break;
+                    case Opcode.PSHF0: Push(new Float(0.0f)); break;
+                    case Opcode.PSHF1: Push(new Float(1.0f)); break;
+                    case Opcode.PSHF2: Push(new Float(2.0f)); break;
+                    case Opcode.PSHF3: Push(new Float(3.0f)); break;
+                    case Opcode.PSHF4: Push(new Float(4.0f)); break;
+                    case Opcode.PSHF5: Push(new Float(5.0f)); break;
 
+                    case Opcode.CPUSH: Push(_program.Constants[reader.ReadByte()]); break;
                     case Opcode.PNULL: OperandStack.Push(Object.NullObject); break;
 
                     case Opcode.POP: OperandStack.Pop(); break;
@@ -193,10 +194,10 @@ namespace LangTrace.VirtualMachine
                     #endregion
 
                     #region Control Flow
-                    case Opcode.JMP:  { int offset = reader.ReadByte(); OffsetPC(offset); } break;
-                    case Opcode.JMPF:  { int offset = reader.ReadByte(); OffsetPC(offset); } break;
-                    case Opcode.JEQZ:  { int offset = reader.ReadByte(); if (((SInt32)Pop()).Value == 0) OffsetPC(offset); } break;
-                    case Opcode.JNEZ:  { int offset = reader.ReadByte(); if (((SInt32)Pop()).Value != 0) OffsetPC(offset); } break;
+                    case Opcode.JMP:  { int offset = reader.ReadSByte(); OffsetPC(offset); Debug.Write($"+({offset})"); } break;
+                    case Opcode.JMPF:  { int offset = reader.ReadSByte(); OffsetPC(offset); } break;
+                    case Opcode.JEQZ:  { int offset = reader.ReadSByte(); if (((SInt32)Pop()).Value == 0) { OffsetPC(offset); Debug.Write($"+({offset})");} } break;
+                    case Opcode.JNEZ:  { int offset = reader.ReadSByte(); if (((SInt32)Pop()).Value != 0) { OffsetPC(offset); Debug.Write($"+({offset})"); } } break;
                     case Opcode.RET:
                         Frames.Pop();
                         _tracer.Return(Line());
@@ -256,10 +257,19 @@ namespace LangTrace.VirtualMachine
                     case Opcode.FLOAD:
                         {
                             int index = reader.ReadByte(); Debug.Write($"({index})");
-                            var obj = (Object)Pop();
+                            var obj = Pop();
+                            // Handle Array's length
                             var field_name = _program.Strings[index];
                             Debug.Write($" {index}:\"{field_name}\" ");
-                            Push(obj[field_name]);
+                            if(obj is ArrayObject)
+                            {
+                                if(field_name == "length")
+                                    Push(new SInt32(((ArrayObject)obj).Length));
+                            }
+                            else
+                            {
+                                Push(((Object)obj)[field_name]);
+                            }
                             
                         }
                         break;
