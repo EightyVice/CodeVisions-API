@@ -109,7 +109,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
 
-        public void SetArrayElement(int line, int arr_id, int index, string oldVal, string newVal, string tag = null)
+        public void SetArrayElement(int line, int arr_id, int index, string value, string tag = null)
         {
             traces.Add(new
             {
@@ -117,9 +117,9 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 @event = "store_element",
                 event_data = new
                 {
+                    arrayId = arr_id,
                     index = index,
-                    oldValue = oldVal,
-                    newValue = newVal
+                    value = value,
                 },
                 tag = tag
             });

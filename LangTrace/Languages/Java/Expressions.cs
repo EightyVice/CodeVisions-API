@@ -26,7 +26,6 @@ namespace LangTrace.Languages.Java
 	{
 		public void Accept(IExpressionVisitor visitor);
 		public TokenPosition Position { get; }
-		public byte[] ToBytes();
 
 	}
 
@@ -59,21 +58,41 @@ namespace LangTrace.Languages.Java
 			Operator = @operator;
 		}
 
-        public TokenPosition Position { get; }
+		public TokenPosition Position { get; }
 
-        public void Accept(IExpressionVisitor visitor)
+		public void Accept(IExpressionVisitor visitor)
 		{
 			visitor.Visit(this);
 		}
 
-        public byte[] ToBytes()
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public byte[] ToBytes()
+		{
+			throw new NotImplementedException();
+		}
+	}
 
 	#endregion
 
+	internal class ArrayAccess : IExpression
+	{
+		public IExpression Accessee { get; }
+		public IExpression Index { get; }
+
+        public TokenPosition Position { get; }
+
+        public ArrayAccess(IExpression accessee, IExpression index, TokenPosition position)
+        {
+            Accessee = accessee;
+            Index = index;
+			Position = position;
+        }
+
+        public void Accept(IExpressionVisitor visitor)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
 	internal class ArrayExpression : IExpression
     {
 		public IExpression[] Elements { get; }

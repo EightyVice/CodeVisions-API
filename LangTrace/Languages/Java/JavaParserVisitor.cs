@@ -316,6 +316,14 @@ namespace LangTrace.Languages.Java
 		}
 
         #region Expression
+        public override object VisitSubscriptExpr([NotNull] JavaParser.SubscriptExprContext context)
+        {
+			return new ArrayAccess(
+				(IExpression)Visit(context.expression(0)),
+				(IExpression)Visit(context.expression(1)),
+				GetPosition(context)
+			);
+        }
         public override object VisitArrayInitializer([NotNull] JavaParser.ArrayInitializerContext context)
         {
 			var exprs = new List<IExpression>();

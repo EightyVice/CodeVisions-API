@@ -74,14 +74,16 @@ namespace LangTrace.VirtualMachine
 
 		// Data Flow
 		STORE,
+        ASTOR,
+		FSTOR,
 		LOAD,
+        ALOAD,
+		FLOAD,
 
 
 		// References
 		NEW,
         ARRAY,
-		FLOAD,
-		FSTOR,
 
 		// IO
 		PRNT,

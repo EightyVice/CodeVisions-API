@@ -15,7 +15,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         /* Events */
         public void NewArray(int line, string[] elements, string tag = null);
-        public void SetArrayElement(int line, int arr_id, int index, string oldVal, string newVal, string tag = null);
+        public void SetArrayElement(int line, int arr_id, int index, string value, string tag = null);
         public void SetField(int line, int object_id, string fieldName, string value, string tag = null);
         public void Assign(int line, int local_id, string value, string tag = null);
         public void Call(int line, int funcId, string tag, params string[] args);

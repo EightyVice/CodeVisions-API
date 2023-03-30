@@ -116,7 +116,7 @@ namespace LangTrace.VirtualMachine
         }
 		private void Execute(ProgramFile.Function function)
         {
-            Debug.WriteLine($"=== Executing {function.Name} ===");
+            Debug.WriteLine($"\n=== Executing {function.Name} ===");
             var linetable = function.LineTable;
 			BinaryReader reader = new BinaryReader(new MemoryStream(function.Bytecode));
 
@@ -285,9 +285,21 @@ namespace LangTrace.VirtualMachine
                             _tracer.SetField(Line(), ObjectsHeap.FindObject(obj), field_name, StrVal(val));
                         }
                         break;
+                    case Opcode.ASTOR:
+                        {
+                            int index = ((SInt32)Pop()).Value;
+                            var arr = (ArrayObject)Pop();
+                            int arrID = ObjectsHeap.FindObject(arr);
+                            Debug.Write($" arr{arrID}[{index}]");
+                            arr[index] = Pop();
+                            _tracer.SetArrayElement(Line(), arrID, index, null, StrVal(arr[arrID]));
+                        }
+                        break;
                     // IO
                     case Opcode.PRNT:
-                        Console.WriteLine(OperandStack.Pop().ToString());
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine(">>> " + OperandStack.Pop().ToString());
+                        Console.ResetColor();
                         break;
                     case Opcode.READ:
                         break;

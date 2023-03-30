@@ -348,6 +348,18 @@ namespace LangTrace.Languages.Java
 
 				// Push Field Name
 				_emitter.FSTOR(StringsID(fa.Field));
+            }else if(assignmentExpr.Lhs is ArrayAccess) // Is array member
+            {
+				var aa = (ArrayAccess)assignmentExpr.Lhs;
+
+
+				// Push Array Reference
+				Emit(aa.Accessee);
+
+				// Push Index
+				Emit(aa.Index);
+
+				_emitter.EmitOpcode(Opcode.ASTOR);
             }
             else // Is Local variable
             {
