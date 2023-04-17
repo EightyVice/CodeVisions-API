@@ -47,7 +47,8 @@ namespace LangTrace.VirtualMachine
 
         private void Push(Value value) => OperandStack.Push(value);
         private Value Pop() => OperandStack.Pop();
-		ProgramFile _program;
+        private Value Peek() => OperandStack.Peek();
+        ProgramFile _program;
         ITraceWriter _tracer;
 
 		public RoaaVM(ProgramFile program, ITraceWriter traceWriter = null)
@@ -138,7 +139,7 @@ namespace LangTrace.VirtualMachine
             {
 				Opcode opcode = (Opcode)reader.ReadByte();
 
-				Debug.Write($"{reader.BaseStream.Position:X4}: {opcode}\t");
+				Debug.Write($"${function.Name}.{reader.BaseStream.Position:X4}: {opcode}\t");
 
                 switch (opcode)
                 {
@@ -181,6 +182,24 @@ namespace LangTrace.VirtualMachine
                             OperandStack.Push(a + b);
                         }
                         break;
+                    case Opcode.SUBI:
+                        {
+                            SInt32 b = (SInt32)OperandStack.Pop(); SInt32 a = (SInt32)OperandStack.Pop();
+                            OperandStack.Push(a - b);
+                        }
+                        break;
+                    case Opcode.DIVI:
+                        {
+                            SInt32 b = (SInt32)OperandStack.Pop(); SInt32 a = (SInt32)OperandStack.Pop();
+                            OperandStack.Push(a / b);
+                        }
+                        break;
+                    case Opcode.MULI:
+                        {
+                            SInt32 b = (SInt32)OperandStack.Pop(); SInt32 a = (SInt32)OperandStack.Pop();
+                            OperandStack.Push(a * b);
+                        }
+                        break;
                     #endregion
 
                     #region Comparison
@@ -201,6 +220,13 @@ namespace LangTrace.VirtualMachine
                     case Opcode.RET:
                         Frames.Pop();
                         _tracer.Return(Line());
+                        Debug.WriteLine("\n=========================");
+                        return;
+                    case Opcode.RTRNV:
+                        Value retVal = Peek();
+                        Frames.Pop();
+                        _tracer.Return(Line(), StrVal(retVal));
+                        Debug.WriteLine("\n=========================");
                         return;
                     case Opcode.CALL:
                         {
@@ -293,6 +319,16 @@ namespace LangTrace.VirtualMachine
                             Debug.Write($" arr{arrID}[{index}]");
                             arr[index] = Pop();
                             _tracer.SetArrayElement(Line(), arrID, index, null, StrVal(arr[arrID]));
+                        }
+                        break;
+
+                    case Opcode.ALOAD:
+                        {
+                            int index = ((SInt32)Pop()).Value;
+                            var arr = (ArrayObject)Pop();
+                            int arrID = ObjectsHeap.FindObject(arr);
+                            Debug.Write($" arr{arrID}<{index}>");
+                            Push(arr[index]);
                         }
                         break;
                     // IO

@@ -20,6 +20,8 @@ namespace LangTrace.Languages.Java
 		void Visit(Null nullExpr);
 		void Visit(FieldAccess fieldAccessExpr);
 		void Visit(ArrayExpression arrayExpr);
+		void Visit(ArrayAccess arrayAccessExpr);
+		void Visit(PostPreExpresion postpreExpr);
 
 	}
 	internal interface IExpression
@@ -45,6 +47,11 @@ namespace LangTrace.Languages.Java
 		LessEqual,
 	}
 
+	internal enum PostPreOpeartor
+    {
+		PlusPlus,
+		MinusMinus
+    }
 	internal class BinaryExpression : IExpression
 	{
 		public readonly IExpression Left;
@@ -89,7 +96,7 @@ namespace LangTrace.Languages.Java
 
         public void Accept(IExpressionVisitor visitor)
         {
-            throw new NotImplementedException();
+			visitor.Visit(this);
         }
 
     }
@@ -110,9 +117,27 @@ namespace LangTrace.Languages.Java
 			visitor.Visit(this);
         }
 
-        public byte[] ToBytes()
+	}
+
+	
+	internal class PostPreExpresion : IExpression
+    {
+		public IExpression Expression { get; }
+		public PostPreOpeartor Operator { get; }
+		public bool IsPre { get; }
+		public TokenPosition Position { get; }
+
+		public PostPreExpresion(IExpression expression, PostPreOpeartor @operator, bool isPre, TokenPosition position)
         {
-            throw new NotImplementedException();
+			Expression = expression;
+			Operator = @operator;
+			IsPre = isPre;
+			Position = position;
+        }
+
+        public void Accept(IExpressionVisitor visitor)
+        {
+			visitor.Visit(this);
         }
     }
 	internal class Integer : IExpression

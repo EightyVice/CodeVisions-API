@@ -11,11 +11,12 @@ namespace LangTrace.Languages.Java
 
 	internal interface IStatementVisitor
 	{
-		void Visit(BlockStatement blockStmt);
+		void Visit(ReturnStatement returnStatement);
 		void Visit(IfStatement ifStmt);
 		void Visit(ExpressionStatement exprStmt);
 		void Visit(WhileStatement whileStmt);
-
+		void Visit(BlockStatement blockStmt);
+	
 	}
 
 	internal interface IStatement
@@ -27,10 +28,10 @@ namespace LangTrace.Languages.Java
 	
 	internal class BlockStatement : IStatement
 	{
-		public readonly List<IStatement> InnerStatements;
+		public IStatement[] InnerStatements;
         public TokenPosition Position { get; }
 
-		public BlockStatement(List<IStatement> innerStatements, TokenPosition position)
+		public BlockStatement(IStatement[] innerStatements, TokenPosition position)
 		{
 			InnerStatements = innerStatements;
 			Position = position;
@@ -103,7 +104,23 @@ namespace LangTrace.Languages.Java
 	}
 
 
+	internal class ReturnStatement : IStatement
+    {
+		public IExpression ReturnExpression { get;}
 
+		public TokenPosition Position { get; }
+
+		public ReturnStatement(IExpression returnStatement, TokenPosition position)
+        {
+			ReturnExpression = returnStatement;
+			Position = position;
+        }
+
+		public void Accept(IStatementVisitor visitor)
+        {
+			visitor.Visit(this);
+        }
+    }
 	internal class Definition 
 	{
 		public readonly Declaration Declaration;
@@ -121,13 +138,11 @@ namespace LangTrace.Languages.Java
 	{
 		public readonly string Name;
 		public readonly TypeDescriptor Type;
-		public readonly IExpression InitialValue;
 
-		public LocalVariable(string name, TypeDescriptor type, IExpression initialValue)
+		public LocalVariable(string name, TypeDescriptor type)
 		{
 			Name = name;
 			Type = type;
-			InitialValue = initialValue;
 		}
 	}
 

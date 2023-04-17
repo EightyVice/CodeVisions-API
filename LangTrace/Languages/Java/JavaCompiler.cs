@@ -22,6 +22,7 @@ namespace LangTrace.Languages.Java
 		private Dictionary<int, int> _lines = new Dictionary<int, int>();
 
 		private List<string> _methodsID = new List<string>();
+		private Method _currentMethod = null;
 
 		public JavaCompiler(CompilationUnit program)
 		{
@@ -86,7 +87,7 @@ namespace LangTrace.Languages.Java
 						locals.Add((param.Name, null));
 
 					foreach(var local in method.Locals)
-						foreach(var l in local.Variables) locals.Add((l.Name, null)); 
+						locals.Add((local.Name, null)); 
             
 
 					// Methods metadata
@@ -99,13 +100,11 @@ namespace LangTrace.Languages.Java
 
 		private byte LocalID(string id)
 		{
-			if (!_localIDs.Contains(id))
-			{
-				_localIDs.Add(id);
-				return (byte)(_localIDs.Count - 1);
-			}
+			var index = _currentMethod.Parameters.ToList().FindIndex(p => p.Name == id);
+			if(index == -1)
+				index = _currentMethod.Locals.ToList().FindIndex(l => l.Name == id) + _currentMethod.Parameters.Length;
 			
-			return (byte)_localIDs.IndexOf(id);	
+			return (byte)index;	
 		}
 
 		private byte StringsID(string id)
@@ -123,6 +122,7 @@ namespace LangTrace.Languages.Java
         {
 			_emitter = new ByteCodeGenerator(new MemoryStream());
 			_localIDs = new List<string>();
+			_currentMethod = method;
 			_lines = new Dictionary<int, int>();
 
 			foreach(var stmt in method.Statements){
@@ -137,9 +137,15 @@ namespace LangTrace.Languages.Java
 		#region Statement
 		public void Visit(BlockStatement blockStmt)
 		{
-			throw new NotImplementedException();
+			foreach(var stmt in blockStmt.InnerStatements)
+				Emit(stmt);
 		}
 
+		public void Visit(ReturnStatement returnStmt)
+        {
+			Emit(returnStmt.ReturnExpression);
+			_emitter.EmitOpcode(Opcode.RTRNV);
+        }
 		public void Visit(IfStatement ifStmt)
 		{
 			// Emit Condition
@@ -173,27 +179,46 @@ namespace LangTrace.Languages.Java
 
 		public void Visit(WhileStatement whileStmt)
 		{
+			var backward = _emitter.Length;
+
 			// Emit Condition
 			Emit(whileStmt.Condition);
 
 			// Get the body bytecode
 			var body_byte_code = EmitNoAppend(whileStmt.Body);
 
-			var backward = _emitter.Length;
 
-			_emitter.JEQZ((sbyte)body_byte_code.Length);
+			_emitter.JEQZ((sbyte)(body_byte_code.Length + 2));
 			_emitter.AddBytes(body_byte_code);
 
 			// Push offset( -5 for PUSH (NUMBER))
-			_emitter.JMP((sbyte)(-body_byte_code.Length-2));
+			_emitter.JMP((sbyte)(backward - _emitter.Length - 2));
 
 			// Pop Condition
-			_emitter.EmitOpcode(Opcode.POP);
+			//_emitter.EmitOpcode(Opcode.POP);
 		}
 		public void Visit(ExpressionStatement exprStmt)
 		{
+			if(exprStmt.expression is PostPreExpresion)
+			{
+				// To expr += 1
+				var expr = ((PostPreExpresion)exprStmt.expression).Expression;
+				Emit(
+					new Assignment(
+						expr,
+						new BinaryExpression(
+							expr,
+							new Integer(1),
+							ArithmeticOperator.Plus
+						),
+						exprStmt.Position
+					)
+				);
+				return;
+            }
 			Emit(exprStmt.expression);
 		}
+		
 
 		void addlineTable(int line, int start, int end)
 		{
@@ -241,6 +266,8 @@ namespace LangTrace.Languages.Java
 			_emitter = main_gen;
 			return bytes;
 		}
+
+
 		#endregion
 
 		#region Expression
@@ -257,6 +284,15 @@ namespace LangTrace.Languages.Java
 				Emit(expr);
             
 			_emitter.ARRAY((byte)arr_length);
+        }
+
+		public void Visit(ArrayAccess arrayAccessExpr)
+        {
+			// ALOAD <arr> <index>
+
+			Emit(arrayAccessExpr.Accessee);
+			Emit(arrayAccessExpr.Index);
+			_emitter.EmitOpcode(Opcode.ALOAD);
         }
 		public void Visit(Integer integerExpr)
 		{
@@ -284,6 +320,14 @@ namespace LangTrace.Languages.Java
 			throw new NotImplementedException();
 		}
 
+		public void Visit(PostPreExpresion postpreExpr)
+        {
+			Emit(postpreExpr.Expression);
+			if (postpreExpr.Operator == PostPreOpeartor.PlusPlus)
+				_emitter.EmitOpcode(Opcode.INC);
+			else
+				_emitter.EmitOpcode(Opcode.DEC);
+        }
 		public void Visit(BinaryExpression binaryExpr)
 		{
 			// Emit Operands
@@ -390,6 +434,8 @@ namespace LangTrace.Languages.Java
 
 
         }
+
+
         #endregion
 
 

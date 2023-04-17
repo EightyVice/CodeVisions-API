@@ -55,6 +55,8 @@ namespace LangTrace.VirtualMachine
 		MULI,
 		DIVI,
 		MODI,
+        INC,
+        DEC,
 
 		// Comparison
 		EQUL,
@@ -71,6 +73,7 @@ namespace LangTrace.VirtualMachine
 		JNEZ,
 		CALL,
 		RET,
+        RTRNV,
 
 		// Data Flow
 		STORE,
