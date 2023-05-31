@@ -49,6 +49,8 @@ namespace LangTrace.VirtualMachine
 		CPUSH,
 		POP,
 
+        DUPLI,
+
 		// Arithmetics
 		ADDI,
 		SUBI,
@@ -91,6 +93,13 @@ namespace LangTrace.VirtualMachine
 		// IO
 		PRNT,
 		READ,
+
+        // Special Data Structures
+        NEWLINK,
+        LNGNEXT,
+        LNSNEXT,
+        LNGDATA,
+        LNSDATA,
 
         // Breakpoint
         BRKPNT,

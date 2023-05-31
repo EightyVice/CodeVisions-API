@@ -1,19 +1,29 @@
-﻿public class Link{
+﻿public class Link{   
 
-    static int fib(int n)
-    {
-        if (n <= 1)
-            return n;
-        return fib(n - 1) + fib(n - 2);
+    int data;
+    Link next;
+
+    public Link(int a, Link b) {
+        this.data = a;
+        this.next = b;
     }
- 
+
     public static void Main()
     {
-        int n = 6;
-        print(fib(n));
+        Link p = new Link(1, new Link(2, new Link(3, new Link(4, null))));
     }
 }
 	/*
+
+
+        public Link iterateOverList(Link p, Link q){
+        while(q.next != null){
+            q = q.next
+        }
+        return q;
+    }
+
+
 		Link a = new Link();
 		Link y = new Link();
 		Link b = a;

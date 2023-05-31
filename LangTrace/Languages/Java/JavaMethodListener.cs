@@ -35,20 +35,21 @@ namespace LangTrace.Languages.Java
 
 
 		}
-        public override void EnterMethodDeclaration([NotNull] JavaParser.MethodDeclarationContext context)
-        {
-			if (context.formalParameters().formalParameterList() != null)
-			{
-				var parameters = context.formalParameters().formalParameterList().formalParameter();
-				foreach (var param in parameters)
-				{
-					string paramType = param.typeType().GetText();
-					string paramName = param.variableDeclaratorId().GetText();
 
-					_params.Add(new Declaration(TypeDescriptor.FromString(paramType), paramName));
-				}
+		// Extract Parameters
+        public override void EnterFormalParameterList([NotNull] JavaParser.FormalParameterListContext context)
+        {
+			var parameters = context.formalParameter();
+			foreach (var param in parameters)
+			{
+				string paramType = param.typeType().GetText();
+				string paramName = param.variableDeclaratorId().GetText();
+
+				_params.Add(new Declaration(TypeDescriptor.FromString(paramType), paramName));
 			}
 		}
+
+		// Extract Locals
         public override void ExitLocalVariableDeclaration([NotNull] JavaParser.LocalVariableDeclarationContext context)
         {
 		

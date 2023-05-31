@@ -10,10 +10,15 @@ namespace LangTrace.VirtualMachine.TraceGenerator
     internal class JSONTraceWriter : ITraceWriter
     {
         List<object> traces = new List<object>();
-        List<object> functions = new List<object>();
-        List<object> classes = new List<object>();
+        public ICollection<object> Traces {get => traces;}
 
-        public void SetField(int line, int objectId, string fieldName, string value, string tag = null)
+        List<object> functions = new List<object>();
+        public ICollection<object> Functios { get => functions; }
+        List<object> classes = new List<object>();
+        public ICollection<object> Classes { get => classes; }
+
+
+        public void SetField(int line, int objectId, int classId, string fieldName, string value, string tag = null)
         {
             traces.Add(new
             {
@@ -22,6 +27,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
                 event_data = new
                 {
                     objectId = objectId,
+                    classId = classId,
                     fieldName = fieldName,
                     value = value,
                 },
@@ -86,18 +92,7 @@ namespace LangTrace.VirtualMachine.TraceGenerator
             });
         }
         
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(
-                new
-                {
-                    classes,
-                    functions,
-                    traces
-                },
-                new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }
-            );
-        }
+
 
         public void DefineClass(string name, string[] fields, string tag = null)
         {
@@ -139,6 +134,20 @@ namespace LangTrace.VirtualMachine.TraceGenerator
 
         public void NewArray(int line, string[] elements, string tag = null)
             => AddTrace(line, "new_array", new { elements = elements }, tag);
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(
+                new
+                {
+                    classes,
+                    functions,
+                    traces
+                },
+                new JsonSerializerOptions() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }
+            );
+        }
+
     }
 
 }

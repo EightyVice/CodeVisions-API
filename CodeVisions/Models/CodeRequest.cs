@@ -22,7 +22,7 @@ namespace CodeVisions.Models
 		public ICollection<Step> Steps { get; set; }
 		public ICollection<string> Errors { get; set; }
 		public ICollection<string> TestLogs { get; set; }
-		public ICollection<CaseResult> CaseResults { get; set; }
+		//public ICollection<CaseResult> CaseResults { get; set; }
 
 	}
 }

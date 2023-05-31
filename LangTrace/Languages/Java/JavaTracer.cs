@@ -11,11 +11,11 @@ using LangTrace.VirtualMachine.TraceGenerator;
 namespace LangTrace.Languages.Java
 {
 
-	public class JavaInterpreter : Interpreter
+	public class JavaTracer : Tracer
 	{
-		public override InterpreterResult Interpret(string sourceCode, string entryPoint = null)
+		public override TracerResult ExecuteAndTrace(TracerOptions options, string sourceCode)
 		{
-			InterpreterResult result = new InterpreterResult();
+			TracerResult result = new TracerResult();
 
 
 			AntlrInputStream fs = new AntlrInputStream(sourceCode);
@@ -27,7 +27,7 @@ namespace LangTrace.Languages.Java
 			// Build Parse Tree
 			var parseTree = parser.compilationUnit();
 
-			if (Status == InterpretationStatus.Failed)
+			if (Status == TracerStatus.Failed)
 				return null;
 
 			try
@@ -46,18 +46,23 @@ namespace LangTrace.Languages.Java
 				RoaaVM vm = new RoaaVM(compiler_result, json_tracer);
 
 				Console.WriteLine("Running...\n");
-				vm.Call(entryPoint);
+				vm.Call(options.EntryPoint);
 				Console.WriteLine("VM ran code successfully, printing trace...");
 				Console.WriteLine(json_tracer.ToString());
-
+				return new TracerResult()
+				{
+					Functions = json_tracer.Functios,
+					Classes = json_tracer.Classes,
+					Traces = json_tracer.Traces
+				};
 			}
 			catch (CompileErrorException ex)
 			{
 				Console.WriteLine(ex.Message);
-				Status = InterpretationStatus.Failed;
-				result.Errors.Add(ex.Message);
+				Status = TracerStatus.Failed;
+				//result.Errors.Add(ex.Message);
 			}
-			Status = InterpretationStatus.Success;
+			Status = TracerStatus.Success;
 			return result;
 		}
 	}

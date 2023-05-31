@@ -17,7 +17,7 @@ namespace LangTrace.Languages.Java
 		void Visit(Identifier idExpr);
 		void Visit(Assignment assignmentExpr);
 		void Visit(ConstructorCall ctorExpr);
-		void Visit(Null nullExpr);
+		void Visit(Reference refExpr);
 		void Visit(FieldAccess fieldAccessExpr);
 		void Visit(ArrayExpression arrayExpr);
 		void Visit(ArrayAccess arrayAccessExpr);
@@ -202,31 +202,26 @@ namespace LangTrace.Languages.Java
 			visitor.Visit(this);
 		}
 
-        public byte[] ToBytes()
-        {
-            throw new NotImplementedException();
-        }
     }
 
-    internal class Null : IExpression
+    internal class Reference : IExpression
     {
-		private Null() { }
+		private Reference() { }
 
-		public static Null Reference = new Null();
+		public static Reference Null = new Reference();
+		public static Reference This = new Reference();
 
-        public TokenPosition Position { get; }
+		public TokenPosition Position { get; }
 
         public void Accept(IExpressionVisitor visitor)
         {
 			visitor.Visit(this);
         }
 
-        public byte[] ToBytes()
-        {
-            throw new NotImplementedException();
-        }
     }
-    internal class FunctionCall : IExpression
+
+
+	internal class FunctionCall : IExpression
 	{
 		public readonly string Name;
 		public readonly List<IExpression> Arguments;

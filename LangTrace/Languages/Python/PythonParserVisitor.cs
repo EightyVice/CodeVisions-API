@@ -11,9 +11,9 @@ namespace LangTrace.Languages.Python
 	{
 		private Environment environment = new Environment();
 
-		InterpreterResult _result;
+		TracerResult _result;
 
-		public PythonParserVisitor(InterpreterResult result)
+		public PythonParserVisitor(TracerResult result)
 		{
 			_result = result;
 		}

@@ -113,6 +113,9 @@ namespace LangTrace.VirtualMachine
             if (value is ArrayObject)
                 return $"arr:{ObjectsHeap.FindObject(value)}";
 
+            if (value is LinkedListNodeObject)
+                return $"lnode:{ObjectsHeap.FindObject(value)}";
+
             return value.ToString();
         }
 		private void Execute(ProgramFile.Function function)
@@ -139,7 +142,7 @@ namespace LangTrace.VirtualMachine
             {
 				Opcode opcode = (Opcode)reader.ReadByte();
 
-				Debug.Write($"${function.Name}.{reader.BaseStream.Position:X4}: {opcode}\t");
+				Debug.Write($"\t${function.Name}.{reader.BaseStream.Position:X4}: {opcode}\t");
 
                 switch (opcode)
                 {
@@ -174,6 +177,8 @@ namespace LangTrace.VirtualMachine
                     case Opcode.PNULL: OperandStack.Push(Object.NullObject); break;
 
                     case Opcode.POP: OperandStack.Pop(); break;
+
+                    case Opcode.DUPLI: OperandStack.Push(OperandStack.Peek()); break;
                     #endregion
 
                     #region Arithmetics
@@ -220,24 +225,22 @@ namespace LangTrace.VirtualMachine
                     case Opcode.RET:
                         Frames.Pop();
                         _tracer.Return(Line());
-                        Debug.WriteLine("\n=========================");
                         return;
                     case Opcode.RTRNV:
                         Value retVal = Peek();
                         Frames.Pop();
                         _tracer.Return(Line(), StrVal(retVal));
-                        Debug.WriteLine("\n=========================");
                         return;
                     case Opcode.CALL:
                         {
                             int index = reader.ReadByte();
-                            Debug.Write($"({index})");
+                            Debug.Write($"({index})\t");
                             var callee = _program.Functions[index];
                             var args = new Value[callee.Arity];
-                            for (int i = args.Length - 1; i >= 0; i--)
+                            for (int i = 0; i < args.Length; i++)
                                 args[i] = Pop();
 
-                            _tracer.Call(Line(), index, null, args.Select(a => a.ToString()).ToArray());
+                            _tracer.Call(Line(), index, null, args.Select(a => StrVal(a)).ToArray());
                             Call(callee, args);
                         }
                         break;
@@ -248,7 +251,7 @@ namespace LangTrace.VirtualMachine
                     case Opcode.STORE:
                         {
                             int index = reader.ReadByte();
-                            Debug.Write($"({index})");
+                            Debug.Write($"({index})\t");
                             CurrentFrame.Locals[index] = OperandStack.Pop();
 
                             _tracer.Assign(Line(), index, StrVal(CurrentFrame.Locals[index]));
@@ -257,7 +260,7 @@ namespace LangTrace.VirtualMachine
                     case Opcode.LOAD:
                         { 
                             int index = reader.ReadByte();
-                            Debug.Write($"({index})");
+                            Debug.Write($"({index})\t");
                             OperandStack.Push(CurrentFrame.Locals[index]);
                         }
                         break;
@@ -265,7 +268,7 @@ namespace LangTrace.VirtualMachine
 
                     case Opcode.NEW:
                         {
-                            int index = reader.ReadByte(); Debug.Write($"({index})");
+                            int index = reader.ReadByte(); Debug.Write($"({index})\t");
                             Push(ObjectsHeap.CreateObject(_program.Classes[index]));
                             _tracer.NewObject(Line(), index);
                         }
@@ -303,12 +306,27 @@ namespace LangTrace.VirtualMachine
                     case Opcode.FSTOR:
                         {
                             int index = reader.ReadByte(); Debug.Write($"({index})");
-                            var obj = (Object)Pop();
+                            var obj = Pop();
                             var val = Pop();
                             var field_name = _program.Strings[index];
                             Debug.Write($" {index}:\"{field_name}\" ");
-                            obj[field_name] = val;
-                            _tracer.SetField(Line(), ObjectsHeap.FindObject(obj), field_name, StrVal(val));
+
+                            if(obj is LinkedListNodeObject)
+                            {
+                                var node = (LinkedListNodeObject)obj;
+                                switch (field_name)
+                                {
+                                    case "next": node.NextNode = (LinkedListNodeObject)val; break;
+                                    case "data": node.Value = val; break;
+                                    default:
+                                        throw new Exception();
+                                }
+                            }
+                            else
+                            {
+                                ((Object)obj)[field_name] = val;
+                                _tracer.SetField(Line(), ObjectsHeap.FindObject(obj),_program.Classes.ToList().IndexOf(((Object)obj).Class), field_name, StrVal(val));
+                            }
                         }
                         break;
                     case Opcode.ASTOR:
@@ -340,7 +358,18 @@ namespace LangTrace.VirtualMachine
                     case Opcode.READ:
                         break;
 
+                    case Opcode.NEWLINK:
+                        ObjectsHeap.CreateObject(
+                            new ProgramFile.Class(
+                                "LinkNode", 
+                                new (string, Descriptor)[]{
+                                    ("next", new ClassDescriptor("LinkNode")),
+                                    ("data", new ClassDescriptor("Object"))
+                                }
+                            )
+                        );
 
+                        break;
                     case Opcode.IMPDP:
 
                         break;

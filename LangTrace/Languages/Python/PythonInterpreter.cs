@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace LangTrace.Languages.Python
 {
-	public class PythonInterpreter : Interpreter
+	public class PythonInterpreter : Tracer
 	{
-		public override InterpreterResult Interpret(string sourceCode, string testCode = null)
+		public override TracerResult ExecuteAndTrace(TracerOptions options, string sourceCode)
 		{
-			InterpreterResult result = new InterpreterResult();
+			TracerResult result = new TracerResult();
 
 
 			AntlrInputStream fs = new AntlrInputStream(sourceCode);
@@ -22,7 +22,7 @@ namespace LangTrace.Languages.Python
 			parser.AddErrorListener(new ErrorListener(result));
 			var tree = parser.file_input();
 
-			if (Status == InterpretationStatus.Failed)
+			if (Status == TracerStatus.Failed)
 				return null;
 
 			try
@@ -32,11 +32,11 @@ namespace LangTrace.Languages.Python
 			}
 			catch (CompileErrorException ex)
 			{
-				Status = InterpretationStatus.Failed;
-				result.Errors.Add(ex.Message);
+				Status = TracerStatus.Failed;
+				//result.Errors.Add(ex.Message);
 			}
 
-			Status = InterpretationStatus.Success;
+			Status = TracerStatus.Success;
 			return result;
 		}
 	}

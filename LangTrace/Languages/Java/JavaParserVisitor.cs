@@ -114,6 +114,8 @@ namespace LangTrace.Languages.Java
 
 			// Parameters
 			funcParameters = methodExtractor.Parameters.ToList();
+			if (!is_static)
+				funcParameters.Insert(0, new Declaration(new TypeDescriptor() { IsReference = true }, "this"));
 
 			// Body
 			if (context.methodBody != null)
@@ -191,59 +193,42 @@ namespace LangTrace.Languages.Java
 			string methodName = context.identifier().GetText();
 			TypeDescriptor returnType = null;
 			var  bodyStmts = new List<IStatement>();
-			var locals = new List<LocalVariableDeclaration>();
+			var locals = new List<LocalVariable>();
 			var funcParameters = new List<Declaration>();
 
+			JavaMethodListener methodExtractor = new JavaMethodListener();
+			ParseTreeWalker.Default.Walk(methodExtractor, context);
 
 			// Parameters
-			if (context.formalParameters().formalParameterList() != null)
-			{
-				var parameters = context.formalParameters().formalParameterList().formalParameter();
-				funcParameters = new List<Declaration>();
-
-				foreach (var param in parameters)
-				{
-					string paramType = param.typeType().GetText();
-					string paramName = param.variableDeclaratorId().GetText();
-
-					funcParameters.Add(new Declaration(TypeDescriptor.FromString(paramType), paramName));
-				}
-			}
+			funcParameters = methodExtractor.Parameters.ToList();
+			funcParameters.Insert(0, new Declaration(new TypeDescriptor() { ClassName = methodName }, "this"));
 
 			// Body
-			if (context.block() != null)
+			if (context.constructorBody != null)
 			{
-				locals = new List<LocalVariableDeclaration>();
-				foreach (var stmt in context.block().blockStatement())
-				{
-					if (stmt.localVariableDeclaration() != null)
-					{
-						var vardecl = (LocalVariableDeclaration)Visit(stmt.localVariableDeclaration());
-						locals.Add(vardecl);
 
-						foreach (var v in vardecl.Variables)
-						{
-							bodyStmts.Add(
-								new ExpressionStatement(
-									new Assignment(
-										new Identifier(v.Name),
-										null,
-										GetPosition(stmt)
-									), GetPosition(stmt)
-								)
-							) ;
-						}
-					}
+				locals = methodExtractor.Locals.ToList();
+
+				foreach (var stmt_ctx in context.constructorBody.blockStatement())
+				{
+					object stmt = null;
+					if (stmt_ctx.statement() != null)
+						stmt = Visit(stmt_ctx.statement());
 					else
-					{
-						object body_stmt = Visit(stmt.statement());
-						bodyStmts.Add((IStatement)body_stmt);
-					}
+						stmt = Visit(stmt_ctx.localVariableDeclaration());
+
+
+					if (stmt is IStatement[])
+						bodyStmts.AddRange((IStatement[])stmt);
+					else if (stmt is IStatement)
+						bodyStmts.Add((IStatement)stmt);
+					else
+						throw new Exception();
+
 				}
 			}
 
-			//return new Method(null, $"ctor:{methodName}", bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray(), false, methodName);
-			return null;
+			return new Method(null, $"ctor{funcParameters.Count}:{methodName}", bodyStmts.ToArray(), funcParameters.ToArray(), locals.ToArray(), false, methodName);
 		}
         public override Class VisitClassDeclaration([NotNull] JavaParser.ClassDeclarationContext context)
         {
@@ -439,7 +424,7 @@ namespace LangTrace.Languages.Java
 				return new Boolean(Convert.ToBoolean(context.BOOL_LITERAL().GetText()));
 
 			if (context.NULL_LITERAL() != null)
-				return Null.Reference;
+				return Reference.Null;
 
 			return VisitChildren(context);
         }
@@ -472,9 +457,14 @@ namespace LangTrace.Languages.Java
             {
 				var class_name = context.creator().createdName().identifier(0).GetText();
 				var ctor_ctx = context.creator().classCreatorRest();
+				var ctor_args = ctor_ctx.arguments().expressionList()?.expression().Select(arg => (IExpression)Visit(arg)).ToArray();
+
+				if (ctor_args == null)
+					ctor_args = new IExpression[0];
+
 				return new ConstructorCall(
 					class_name,
-					ctor_ctx.arguments().expressionList()?.expression().Select(arg => (IExpression)Visit(arg)).ToArray(),
+					ctor_args,
 					GetPosition(context));
             }
 
@@ -488,11 +478,18 @@ namespace LangTrace.Languages.Java
 
         public override object VisitDotExpr([NotNull] JavaParser.DotExprContext context)
         {
-			if (context.identifier() != null) 
+			if (Visit(context.expression()) == Reference.This)
+				return new FieldAccess(Reference.This, context.identifier().GetText());
+			if (context.expression() != null) 
 				return new FieldAccess((IExpression)Visit(context.expression()), context.identifier().GetText());
 			return null;
         }
 
+
+        public override object VisitThisPrimary([NotNull] JavaParser.ThisPrimaryContext context)
+        {
+			return Reference.This;
+        }
         public override object VisitGroupingPrimary([NotNull] JavaParser.GroupingPrimaryContext context)
         {
 			return Visit(context.expression());

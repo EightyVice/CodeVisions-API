@@ -77,7 +77,7 @@ namespace LangTrace.Languages.Java
                     if (!method.IsStatic)
                     {
 						var l = method.Parameters.ToList();
-						l.Insert(0, new Declaration(new TypeDescriptor() { IsReference = true, ClassName = method.ClassName }, "this"));
+						//l.Insert(0, new Declaration(new TypeDescriptor() { IsReference = true, ClassName = method.ClassName }, "this"));
 						parameters = l.ToArray();
 					}
 
@@ -100,6 +100,7 @@ namespace LangTrace.Languages.Java
 
 		private byte LocalID(string id)
 		{
+			
 			var index = _currentMethod.Parameters.ToList().FindIndex(p => p.Name == id);
 			if(index == -1)
 				index = _currentMethod.Locals.ToList().FindIndex(l => l.Name == id) + _currentMethod.Parameters.Length;
@@ -129,7 +130,11 @@ namespace LangTrace.Languages.Java
 				Emit(stmt);
             }
 
+			if (method.Name.Contains(":") && method.Name.StartsWith("ctor"))
+				_emitter.LOAD(0);
 			_emitter.RET();
+
+
 
 			return _emitter.GetByteCode();
         }
@@ -309,10 +314,13 @@ namespace LangTrace.Languages.Java
             }
 		}
 
-		public void Visit(Null nullExpr)
+		public void Visit(Reference reference)
         {
-			if (nullExpr == Null.Reference)
+			if (reference == Reference.Null)
 				_emitter.EmitOpcode(Opcode.PNULL);
+
+			if (reference == Reference.This)
+				_emitter.LOAD(0);
         }
 
 		public void Visit(Boolean booleanExpr)
@@ -414,7 +422,10 @@ namespace LangTrace.Languages.Java
 		public void Visit(FieldAccess fieldAccess)
         {
 			// Push Accessee
-			Emit(fieldAccess.Reference);
+			if (fieldAccess.Reference == Reference.This)
+				_emitter.LOAD(0);	// Load local variable 0, it contains 'this' in non-static methods
+			else
+				Emit(fieldAccess.Reference);
 
 			// Push Field
 			_emitter.FLOAD(StringsID(fieldAccess.Field));
@@ -422,18 +433,20 @@ namespace LangTrace.Languages.Java
         public void Visit(ConstructorCall ctorExpr)
         {
 			// Emit Arguments
-			if(ctorExpr.Arguments != null)
-            {
-				foreach (var arg in ctorExpr.Arguments)
+			if (ctorExpr.Arguments != null)
+			{
+				foreach (var arg in ctorExpr.Arguments.Reverse())
 					Emit(arg);
-            }
+			}
 
-			// Push NEW $CLASS_ID
+			// NEW $CLASS_ID
 			byte index = (byte)Array.FindIndex(_program.Classes, c => c.Name == ctorExpr.ClassName);
 			_emitter.NEW(index);
 
-
-        }
+			// CALL $FUNC_ID (the format is ctor<arity>:<class_name>
+			byte funcid = (byte)_methodsID.IndexOf($"ctor{ctorExpr.Arguments.Length + 1}:{ctorExpr.ClassName}");
+			_emitter.CALL(funcid);
+		}
 
 
         #endregion

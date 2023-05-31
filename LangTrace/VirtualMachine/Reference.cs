@@ -52,4 +52,15 @@ namespace LangTrace.VirtualMachine
             return "{" + string.Join(", ", (object[])_array) + "}";
         }
     }
+
+    internal class LinkedListNodeObject : Value
+    {
+        public LinkedListNodeObject NextNode { get; set; }
+        public Value Value { get; set; }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+    }
 }

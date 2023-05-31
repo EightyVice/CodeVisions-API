@@ -152,7 +152,7 @@ memberDeclaration
    for invalid return type after parsing.
  */
 methodDeclaration
-    : typeTypeOrVoid identifier formalParameters
+    : annotation? typeTypeOrVoid identifier formalParameters
       methodBody
     ;
 
